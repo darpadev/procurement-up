@@ -19,12 +19,8 @@ use App\Http\Controllers\UserController;
 
 // Prevent accessing home page without login
 Route::middleware(['auth'])->group(function () {
-    Route::get('/', function (){
-        redirect(route('home'));
-    });
-
     // HomeController
-    Route::get('/home', [HomeController::class, 'index'])->name('home');
+    Route::get('/', [HomeController::class, 'index'])->name('home');
 
     // ProcurementController
     Route::get('/new-procurement', [ProcurementController::class, 'create'])->name('new-procurement');
