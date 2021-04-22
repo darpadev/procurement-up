@@ -120,7 +120,7 @@
                     <tr>
                         <th class="text-center">#</th>
                         <th class="text-center">Nama Barang</th>
-                        <th class="text-center">Spesifikasi</th>
+                        <th class="text-center">Kategori</th>
                         <th class="text-center">Harga Satuan</th>
                         <th class="text-center">Jumlah</th>
                         <th class="text-center">Total Harga</th>
@@ -134,8 +134,8 @@
                         @endphp
                         <tr>
                             <td class="align-baseline text-center" style="white-space: nowrap; width: 1%;">{{ $loop->iteration }}</td>
-                            <td class="align-baseline text-left">{{ $unit->name }}</td>
-                            <td class="align-baseline text-left">{{ $unit->specs }}</td>
+                            <td class="align-baseline text-left">{{ $unit->name }}<hr>{{ $unit->specs }}</td>
+                            <td class="align-baseline text-left">{{ $unit->category }}</td>
                             <td class="align-baseline text-center">
                                 <div class="d-flex justify-content-between">
                                     <span>Rp</span>
