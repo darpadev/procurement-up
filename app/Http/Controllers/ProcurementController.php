@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Imports\ProcUnitsImport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ItemImport;
 use Auth;
 
 class ProcurementController extends Controller
@@ -348,7 +348,7 @@ class ProcurementController extends Controller
                 $stmt->execute();
             }
 
-            Excel::import(new ProcUnitsImport($proc_id), $request->file('unit-list'));
+            Excel::import(new ItemImport($proc_id), $request->file('unit-list'));
 
             return redirect(Route('show-procurement', ['id' => $proc_id]));
         }else{
@@ -381,7 +381,7 @@ class ProcurementController extends Controller
             ->get();
         $log_dates = \App\Models\ProcLog::select('created_at')->distinct()->orderBy('id', 'DESC')->get();
         $documents = \App\Models\Document::where('procurement', '=', $procurement->id)->get();
-        $unit_lists = \App\Models\ProcUnit::where('procurement', '=', $procurement->id)->get();
+        $items = \App\Models\Item::where('procurement', '=', $procurement->id)->get();
         $pic = \App\Models\User::select('name')->where('id', '=', $procurement->pic)->get();
         $category = \App\Models\ProcCategory::select('name')->where('id', '=', $procurement->category)->get();
         $priority = \App\Models\Priority::select('name')->where('id', '=', $procurement->priority)->get();
@@ -401,7 +401,7 @@ class ProcurementController extends Controller
 
         return view('procurement.my.show', [
             'procurement' => $procurement,
-            'unit_lists' => $unit_lists,
+            'items' => $items,
             'documents' => $documents,
             'log_dates' => $log_dates,
             'category' => $category,

@@ -26,8 +26,8 @@ $(document).ready(function(){
     closeBtn = $('.close-unit-btn')
     unitContent = $('.unit-content')
 
-    $(expandBtn).each((index, element) => {
-        $(expandBtn[index]).on('click', function(event){
+    $(expandBtn).each(index => {
+        $(expandBtn[index]).click(function(event){
             $(this).fadeToggle(() => {
                 $(expandedBtn[index]).fadeToggle()
             })
@@ -37,13 +37,43 @@ $(document).ready(function(){
         })
     })
 
-    $(closeBtn).each((index, element) => {
-        $(closeBtn[index]).on('click', function(event){
+    $(closeBtn).each(index => {
+        $(closeBtn[index]).click(function(event){
             $(expandedBtn[index]).fadeToggle(() =>{
                 $(expandBtn[index]).fadeToggle()
             })
             $(unitContent[index]).fadeToggle()
 
+            event.preventDefault()
+        })
+    })
+
+    quotationBtn = $('.quotation-btn')
+    closeQuotationBtn = $('.close-quotation-btn')
+    quotationContent = $('.quotation-content')
+
+    quotationBtn.each(index => {
+        $(quotationBtn[index]).mouseenter(function(event){
+            $(this).html('Lihat Penawaran')
+            event.preventDefault()
+        })
+
+        $(quotationBtn[index]).mouseleave(function(event){
+            $(this).html('Quotation Available: <span class="badge badge-light">4</span>')
+            event.preventDefault()
+        })
+
+        $(quotationBtn[index]).click(event => {
+            $(quotationContent[index]).slideToggle()
+            $(quotationBtn[index]).fadeToggle()
+            event.preventDefault()
+        })
+    })
+
+    closeQuotationBtn.each(index => {
+        $(closeQuotationBtn[index]).click(event => {
+            $(quotationContent[index]).slideToggle()
+            $(quotationBtn[index]).fadeToggle()
             event.preventDefault()
         })
     })

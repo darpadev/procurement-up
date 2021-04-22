@@ -118,62 +118,81 @@
     {{-- Unit List --}}
     <div id="unitLists" class="card shadow p-4 mb-4">
         @php $total = 0 @endphp
-        @foreach ($unit_lists as $unit)
+        @foreach ($items as $item)
             @php
-                $total += ($unit->price * $unit->qty)
+                $total += ($item->price * $item->qty)
             @endphp
             <div class="row">
-                <div class="col-md-auto"><h5 class="font-weight-bold">{{ str_pad($loop->iteration, strlen(count($unit_lists)), 0, STR_PAD_LEFT) }}</h5></div>
+                <div class="col-md-auto"><h5 class="font-weight-bold">{{ str_pad($loop->iteration, strlen(count($item_lists)), 0, STR_PAD_LEFT) }}</h5></div>
                 <div class="col">
-                    <h5 class="font-weight-bold">{{ $unit->name }}</h5>
-                    <div class="unit-content" style="display: none;">
-                        <h6 class="badge badge-pill <?= $unit->category ? 'badge-primary' : 'badge-danger' ?>">
-                            @if ($unit->category)
-                                {{ $unit->category }}
-                            @else
-                                Kategori belum ditentukan
-                            @endif
-                        </h6>
-                        <h6>Spesifikasi:</h6>
-                        <p>{{ $unit->specs }}</p>
-                        <div class="d-flex justify-content-center table-responsive">
-                            <table class="table table-hover w-75">
-                                <thead>
-                                    <tr>
-                                        <th class="text-center">Harga Satuan</th>
-                                        <th class="text-center" style="white-space: nowrap; width: 1%;">Jumlah</th>
-                                        <th class="text-center">Total Harga</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex justify-content-between">
-                                                <span>Rp</span>
-                                                <span>{{ number_format($unit->price, 2, ',', '.') }}</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">{{ $unit->qty }}</td>
-                                        <td>
-                                            <div class="d-flex justify-content-between">
-                                                <span>Rp</span>
-                                                <span>{{ number_format($unit->qty * $unit->price, 2, ',', '.') }}</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    {{-- Item information --}}
+                    <div class="row">
+                        <div class="col">
+                            <h5 class="font-weight-bold">{{ $item->name }}</h5>
+                            <div class="unit-content" style="display: none;">
+                                <h6 class="badge badge-pill <?= $item->category ? 'badge-primary' : 'badge-danger' ?>">
+                                    @if ($item->category)
+                                        {{ $item->category }}
+                                    @else
+                                        Kategori belum ditentukan
+                                    @endif
+                                </h6>
+                                <h6>Spesifikasi:</h6>
+                                <p>{{ $item->specs }}</p>
+                                <div class="d-flex justify-content-center table-responsive">
+                                    <table class="table w-75">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center">Harga Satuan</th>
+                                                <th class="text-center" style="white-space: nowrap; width: 1%;">Jumlah</th>
+                                                <th class="text-center">Total Harga</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span>Rp</span>
+                                                        <span>{{ number_format($item->price, 2, ',', '.') }}</span>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">{{ $item->qty }}</td>
+                                                <td>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span>Rp</span>
+                                                        <span>{{ number_format($item->qty * $item->price, 2, ',', '.') }}</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-auto">
+                            <a href="#" class="btn btn-sm btn-info quotation-btn">Quotation Available: <span class="badge badge-light">4</span></a>
+                            <a href="#" class="btn btn-sm btn-primary expand-unit-btn">Expand</a>
+                            <span class="expanded-unit-btn" style="display: none;">
+                                <a href="#" class="btn btn-sm btn-primary">Review</a>
+                                <a href="#" class="btn btn-sm btn-danger close-unit-btn">&times;</a>
+                            </span>
+                        </div>   
+                    </div>
+                    {{-- Item Quotation --}}
+                    <div class="row quotation-content" style="display: none">
+                        <div class="col-12">
+                            <hr>
+                            <div class="row">
+                                <div class="col">
+                                    <h5 class="font-weight-bold">Daftar Penawaran</h5>
+                                </div>
+                                <div class="col-md-auto">
+                                    <a href="#" class="btn btn-sm btn-danger close-quotation-btn">&times;</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-auto">
-                    <a href="#" class="btn btn-sm btn-info">Quotation Available: <span class="badge badge-light">4</span></a>
-                    <a href="#" class="btn btn-sm btn-primary expand-unit-btn">Expand</a>
-                    <div class="expanded-unit-btn" style="display: none;">
-                        <a href="#" class="btn btn-sm btn-primary">Review</a>
-                        <a href="#" class="btn btn-sm btn-danger close-unit-btn">&times;</a>
-                    </div>
-                </div>
+                </div>             
             </div>
             @if (!$loop->last)
                 <hr>
@@ -188,7 +207,7 @@
                 @foreach ($log_dates as $index => $date)
                     @if ($index < 1 Or ($index > 1 And date('Y-m-d', strtotime($date[$index])) != date('Y-m-d', strtotime($date[$index-1]))))
                         <tr>
-                            <td class="pb-2">
+                            <td class="text-center pb-2">
                                 <span class="p-2 badge badge-pill badge-primary">
                                     {{ date('d F Y', strtotime($date->created_at)) }}
                                 </span>
@@ -198,9 +217,12 @@
                     @foreach ($logs as $log)
                         @if ($log->created_at == $date->created_at)
                             <tr>
-                                <td class="pb-2">{{ date('H:i:s', strtotime($log->created_at)) }}</td>
-                                <td class="pb-2">{{ $log->name }}</td>
-                                <td class="pb-2">{{ $log->message }}</td>
+                                <td class="text-center align-baseline pb-2">{{ date('H:i:s', strtotime($log->created_at)) }}</td>
+                                <td class="pb-2">
+                                    {{ $log->name }}
+                                    <br>
+                                    {{ $log->message }}
+                                </td>
                             </tr>
                         @endif
                     @endforeach
