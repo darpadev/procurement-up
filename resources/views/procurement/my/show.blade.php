@@ -110,65 +110,79 @@
         @endif
     </div>
 
+    <nav class="nav nav-pills nav-justified mb-2">
+        <a id="unitLists_btn" class="nav-link active" href="#">Daftar barang yang diajukan</a>
+        <a id="logs_btn" class="nav-link" href="#">Logs</a>
+    </nav>
+
     {{-- Unit List --}}
-    <div class="card shadow p-4 mb-4">
-        <h1 class="font-weight-bold">Daftar Barang yang diajukan</h1>
-        <hr>
-        <div class="table-responsive">
-            <table class='table table-hover'>
-                <thead>
-                    <tr>
-                        <th class="text-center">#</th>
-                        <th class="text-center">Nama Barang</th>
-                        <th class="text-center">Kategori</th>
-                        <th class="text-center">Harga Satuan</th>
-                        <th class="text-center">Jumlah</th>
-                        <th class="text-center">Total Harga</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @php $total = 0 @endphp
-                    @foreach ($unit_lists as $unit)
-                        @php
-                            $total += ($unit->price * $unit->qty)
-                        @endphp
-                        <tr>
-                            <td class="align-baseline text-center" style="white-space: nowrap; width: 1%;">{{ $loop->iteration }}</td>
-                            <td class="align-baseline text-left">{{ $unit->name }}<hr>{{ $unit->specs }}</td>
-                            <td class="align-baseline text-left">{{ $unit->category }}</td>
-                            <td class="align-baseline text-center">
-                                <div class="d-flex justify-content-between">
-                                    <span>Rp</span>
-                                    <span>{{ number_format($unit->price, 2, ',', '.') }}</span>
-                                </div>
-                            </td>
-                            <td class="align-baseline text-center">{{ $unit->qty }}</td>
-                            <td class="align-baseline text-center">
-                                <div class="d-flex justify-content-between">
-                                    <span>Rp</span>
-                                    <span>{{ number_format($unit->qty * $unit->price, 2, ',', '.') }}</span>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                    <tr class="table-primary">
-                        <td colspan="3" class="text-right"><h3 class="font-weight-bold">Total</h3></td>
-                        <td colspan="3">
-                            <div class="d-flex justify-content-between">
-                                <h3 class="font-weight-bold">Rp</h3>
-                                <h3 class="font-weight-bold">{{ number_format($total, 2, ',', '.') }}</h3>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+    <div id="unitLists" class="card shadow p-4 mb-4">
+        @php $total = 0 @endphp
+        @foreach ($unit_lists as $unit)
+            @php
+                $total += ($unit->price * $unit->qty)
+            @endphp
+            <div class="row">
+                <div class="col-md-auto"><h5 class="font-weight-bold">{{ str_pad($loop->iteration, strlen(count($unit_lists)), 0, STR_PAD_LEFT) }}</h5></div>
+                <div class="col">
+                    <h5 class="font-weight-bold">{{ $unit->name }}</h5>
+                    <div class="unit-content" style="display: none;">
+                        <h6 class="badge badge-pill <?= $unit->category ? 'badge-primary' : 'badge-danger' ?>">
+                            @if ($unit->category)
+                                {{ $unit->category }}
+                            @else
+                                Kategori belum ditentukan
+                            @endif
+                        </h6>
+                        <h6>Spesifikasi:</h6>
+                        <p>{{ $unit->specs }}</p>
+                        <div class="d-flex justify-content-center table-responsive">
+                            <table class="table table-hover w-75">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center">Harga Satuan</th>
+                                        <th class="text-center" style="white-space: nowrap; width: 1%;">Jumlah</th>
+                                        <th class="text-center">Total Harga</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex justify-content-between">
+                                                <span>Rp</span>
+                                                <span>{{ number_format($unit->price, 2, ',', '.') }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">{{ $unit->qty }}</td>
+                                        <td>
+                                            <div class="d-flex justify-content-between">
+                                                <span>Rp</span>
+                                                <span>{{ number_format($unit->qty * $unit->price, 2, ',', '.') }}</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-auto">
+                    <a href="#" class="btn btn-sm btn-info">Quotation Available: <span class="badge badge-light">4</span></a>
+                    <a href="#" class="btn btn-sm btn-primary expand-unit-btn">Expand</a>
+                    <div class="expanded-unit-btn" style="display: none;">
+                        <a href="#" class="btn btn-sm btn-primary">Review</a>
+                        <a href="#" class="btn btn-sm btn-danger close-unit-btn">&times;</a>
+                    </div>
+                </div>
+            </div>
+            @if (!$loop->last)
+                <hr>
+            @endif
+        @endforeach
     </div>
 
     {{-- Logs --}}
-    <div class="card shadow p-4 mb-4">
-        <h1 class="font-weight-bold">Logs</h1>
-        <hr>
+    <div id="logs" class="card shadow p-4 mb-4" style="display: none;">
         <table>
             <tbody>                
                 @foreach ($log_dates as $index => $date)
