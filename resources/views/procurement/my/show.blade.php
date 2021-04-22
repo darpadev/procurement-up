@@ -123,7 +123,7 @@
                 $total += ($item->price * $item->qty)
             @endphp
             <div class="row">
-                <div class="col-md-auto"><h5 class="font-weight-bold">{{ str_pad($loop->iteration, strlen(count($item_lists)), 0, STR_PAD_LEFT) }}</h5></div>
+                <div class="col-md-auto"><h5 class="font-weight-bold">{{ str_pad($loop->iteration, strlen(count($items)), 0, STR_PAD_LEFT) }}</h5></div>
                 <div class="col">
                     {{-- Item information --}}
                     <div class="row">
