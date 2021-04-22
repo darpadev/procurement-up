@@ -23,7 +23,7 @@ class ItemImport implements ToModel
         if (gettype($row[2]) != 'integer'){
             return NULL;
         }
-        return new ProcUnit([
+        return new Item([
             'procurement' => $this->procurement,
             'name' => $row[0],
             'specs' => $row[1],
