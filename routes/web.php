@@ -2,9 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\ProcurementController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\BidderListController;
+use App\Http\Controllers\ProcurementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +38,12 @@ Route::middleware(['auth'])->group(function () {
         
     // UserController
     Route::get('/profile', [UserController::class, 'index'])->name('profile');
+
+    // BidderListController
+    Route::get('/bidder-list', [BidderListController::class, 'index'])->name('bidder-list');
+    Route::get('/bidder-list/new', [BidderListController::class, 'create'])->name('new-vendor');
+        // Form
+        Route::post('/store-vendor', [BidderListController::class, 'store'])->name('store-vendor');
 });
 
 // AuthController

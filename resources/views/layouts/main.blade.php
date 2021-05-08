@@ -71,6 +71,30 @@
         </li>
 
         <!-- Divider -->
+        <hr class="sidebar-divider">
+
+        <!-- Heading -->
+        <div class="sidebar-heading">
+            <span>{{ __('Bidder List') }}</span>
+        </div>
+
+        <!-- Nav Item - New Vendor -->
+        <li class="nav-item {{ Nav::isRoute('new-vendor') }}">
+            <a class="nav-link" href="{{ route('new-vendor') }}">
+                <i class="fas fa-fw fa-plus"></i>
+                <span>{{ __('New Vendor') }}</span>
+            </a>
+        </li>
+
+        <!-- Nav Item - My Bidder List -->
+        <li class="nav-item {{ Nav::isRoute('bidder-list') }}">
+            <a class="nav-link" href="{{ Route('bidder-list') }}">
+                <i class="fas fa-fw fa-hands-helping"></i>
+                <span>{{ __('My Bidder List') }}</span>
+            </a>
+        </li>
+
+        <!-- Divider -->
         <hr class="sidebar-divider d-none d-md-block">
 
     </ul>
