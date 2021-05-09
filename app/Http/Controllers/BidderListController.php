@@ -14,9 +14,9 @@ class BidderListController extends Controller
     public function index()
     {
         $categories = \App\Models\ItemCategory::join('vendor_categories', 'vendor_categories.category', '=', 'item_categories.id')
-            ->select('id', 'name')->distinct()->get();
+            ->select('id', 'name')->distinct()->orderBy('name')->get();
         $sub_categories = \App\Models\ItemSubCategory::join('vendor_categories', 'vendor_categories.sub_category', '=', 'item_sub_categories.id')
-            ->select('id', 'name', 'item_sub_categories.category')->orderBy('name')->get();
+            ->select('id', 'name', 'item_sub_categories.category')->distinct()->orderBy('name')->get();
         $vendors = \App\Models\Vendor::join('vendor_trecords', 'vendor_trecords.id', '=', 'vendors.track_record')
             ->join('vendor_categories', 'vendor_categories.vendor', '=', 'vendors.id')
             ->join('item_categories', 'item_categories.id', '=', 'vendor_categories.category')
