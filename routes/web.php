@@ -30,10 +30,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/my-procurement/edit/{id}', [ProcurementController::class, 'edit'])->name('edit-procurement');
     Route::get('/view-document/{id}', [ProcurementController::class, 'viewDoc'])->name('view-document');
     Route::get('/download-template', [ProcurementController::class, 'downloadTemplate'])->name('download-template');
+    Route::get('/generate-spph/form/{proc_id}/{vendor_id}', [ProcurementController::class, 'generateSpphForm'])->name('generate-spph-form');
         // Form
         Route::post('/store-procurement', [ProcurementController::class, 'store'])->name('store-procurement');
         Route::post('/update-procurement/{id}', [ProcurementController::class, 'update'])->name('update-procurement');
         Route::post('/doc-upload', [ProcurementController::class, 'docUpload']);
+        Route::post('/generate-spph', [ProcurementController::class, 'generateSpph'])->name('generate-spph');
         Route::get('/doc-destroy/{proc}/{id}', [ProcurementController::class, 'docDestroy'])->name('doc-destroy');
         
     // UserController

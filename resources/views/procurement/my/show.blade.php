@@ -170,7 +170,12 @@
                             </div>
                         </div>
                         <div class="col-md-auto">
-                            <a href="#" class="btn btn-sm btn-info quotation-btn">Quotation Available: <span class="badge badge-light">4</span></a>
+                            <a href="#" class="btn btn-sm btn-info quotation-btn">Quotation Available: 
+                                @php
+                                    $count = \App\Models\Quotation::where('item', '=', $item->id)->where('doc', '<>', NULL)->count();
+                                @endphp
+                                <span class="badge badge-light"><?= $count ?></span>
+                            </a>
                             <a href="#" class="btn btn-sm btn-primary expand-unit-btn">Expand</a>
                             <span class="expanded-unit-btn" style="display: none;">
                                 <a href="#" class="btn btn-sm btn-primary">Review</a>
@@ -184,11 +189,51 @@
                             <hr>
                             <div class="row">
                                 <div class="col">
-                                    <h5 class="font-weight-bold">Daftar Penawaran</h5>
+                                    <h5 class="font-weight-bold">Daftar Vendor</h5>
                                 </div>
                                 <div class="col-md-auto">
                                     <a href="#" class="btn btn-sm btn-danger close-quotation-btn">&times;</a>
-                                </div>
+                                </div>                                
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" style="width: 1%; white-space: nowrap;">#</th>
+                                            <th class="text-center">Vendor Name</th>
+                                            <th class="text-center">Quotation</th>
+                                            <th class="text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($quotations as $quotation)
+                                            @if ($quotation->item == $item->id)
+                                                <tr>
+                                                    <td class="text-right">{{ $loop->iteration }}</td>
+                                                    <td>{{ $quotation->vendor_name }}</td>
+                                                    <td class="text-center w-25">
+                                                        @if ($quotation->doc != NULL)
+                                                            <a href="">{{ $quotation->name }}</a>
+                                                        @else
+                                                            <span class="badge badge-danger p-2">Not Available</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-center" style="width: 1%; white-space: nowrap;">
+                                                        <a 
+                                                            href="{{ Route('generate-spph-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" 
+                                                            target="_blank"
+                                                            class="badge badge-primary mb-2 p-2">
+                                                            Generate SPPH
+                                                        </a>
+                                                        <a href="" class="badge badge-warning text-dark mb-2 p-2">Buat PO</a>
+                                                        <br>
+                                                        <a href="" class="badge badge-success mb-2 p-2">Pemenang Tender</a>
+                                                    </td>
+                                                </tr>
+                                            @endif
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>

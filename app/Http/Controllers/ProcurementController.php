@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ItemImport;
 use Auth;
+use PDF;
 
 class ProcurementController extends Controller
 {
@@ -367,7 +368,11 @@ class ProcurementController extends Controller
         $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->get()[0]['name'];
         $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->get()[0]['name'];
         $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->get();
-
+        $quotations = \App\Models\Quotation::join('vendors', 'vendors.id', '=', 'quotations.vendor')
+            ->select('quotations.*', 'vendors.name AS vendor_name')
+            ->orderBy('vendors.name')
+            ->where('quotations.procurement', '=', $id)
+            ->get();
         $procurement = \App\Models\Procurement::leftJoin('proc_mechanisms', 'proc_mechanisms.id', '=', 'procurements.mechanism')
             ->leftJoin('statuses', 'statuses.id', '=', 'procurements.status')
             ->leftJoin('proc_categories', 'proc_categories.id', '=', 'procurements.category')
@@ -400,6 +405,7 @@ class ProcurementController extends Controller
         }
 
         return view('procurement.my.show', [
+            'quotations' => $quotations,
             'procurement' => $procurement,
             'items' => $items,
             'documents' => $documents,
@@ -673,4 +679,184 @@ class ProcurementController extends Controller
     public function downloadTemplate(){
         return redirect( Url('/resc/TOR_Unit-List_Template.xlsx') );
     }
+
+    public function generateSpphForm($proc_id, $vendor_id){
+        $date = '/UND/' . $this->integerToRoman(date('n')) . date('/Y');
+        $vendor = \App\Models\Vendor::select('name')->where('id', '=', $vendor_id)->get()[0];
+        $procurement = \App\Models\Procurement::select('ref', 'name')->where('id', '=', $proc_id)->get()[0];
+        $items = \App\Models\Quotation::join('items', 'items.id', '=', 'quotations.item')
+            ->select('items.name', 'items.specs')
+            ->where('quotations.vendor', '=', $vendor_id)
+            ->get();
+        
+        return view('procurement.documents.form', [
+            'proc_id' => $proc_id,
+            'vendor_id' => $vendor_id,
+            'date' => $date,
+            'vendor' => $vendor,
+            'procurement' => $procurement,
+            'items' => $items,
+        ]);
+    }
+
+    public function generateSpph(Request $request){
+        $procurement = \App\Models\Procurement::where('id', '=', $request->proc_id)->get()[0];
+        $vendor = \App\Models\Vendor::where('id', '=', $request->vendor_id)->get()[0];
+        $items = \App\Models\Quotation::join('items', 'items.id', '=', 'quotations.item')
+            ->select('items.name', 'items.specs')
+            ->where('quotations.vendor', '=', $request->vendor_id)
+            ->get();
+        $proc_manager = \App\Models\User::join('roles', 'roles.id', '=', 'users.role')
+            ->join('units', 'units.id', '=', 'users.unit')
+            ->select('users.email')
+            ->where('roles.name', '=', 'Manajer')
+            ->where('units.name', '=', 'Fungsi Pengadaan Barang dan Jasa')
+            ->get()[0];
+
+        // CSS
+        $font_bold = "font-weight: bold;";
+        $font_italic = "font-style: italic;";
+        $font_size = "font-size: 10pt;";
+        $text_justify = "text-align: justify; text-justify: inter-word;";
+
+        $mpdf = new \Mpdf\Mpdf([
+            'setAutoTopMargin' => 'stretch',
+            'setAutoBottomMargin' => 'stretch'
+        ]);
+
+        $header_logo_path = asset('img/universitas-pertamina.png');
+
+        $mpdf->SetHTMLHeader(
+            "<div style='text-align: center;'>
+                <img src='https://universitaspertamina.ac.id/wp-content/uploads/2017/11/logo-Press-201x146.png' width='100'>
+            </div>"
+        );
+
+        setlocale(LC_TIME, 'id_ID');
+        $mpdf->WriteHTML("<p style='$font_size'>Jakarta, " . strftime('%d %B %Y') .  '</p>');
+
+        $mpdf->WriteHTML(
+            "<table style='$font_size'>
+                <tr>
+                    <td>Nomor</td>
+                    <td>:</td>
+                    <td>" . $request->ref . $request->date . "</td>
+                </tr>
+                <tr>
+                    <td>Lampiran</td>
+                    <td>:</td>
+                    <td>1 (satu) lembar</td>
+                </tr>
+                <tr>
+                    <td style='vertical-align: top;'>Perihal</td>
+                    <td style='vertical-align: top;'>:</td>
+                    <td style='$font_bold'>Permohonan Proposal Penawawan Harga $procurement->name</td>
+                </tr>
+            </table>"
+        );
+
+        $mpdf->WriteHTML(
+            "<p style='$font_bold $font_size'>
+                Yth. $request->receiver $request->vendor,
+            </p>
+            <p style='$text_justify $font_size'>
+                Dengan hormat, sehubungan dengan memorandum no. $procurement->ref 
+                pada tanggal " . date("d F Y", strtotime($procurement->created_at)) . "
+                tentang <span style='$font_bold'>$procurement->name</span>, 
+                kami mengharapkan perusahaan Bapak/Ibu untuk dapat mengajukan penawaran
+                terkait pengadaan tersebut. Spesifikasi kebutuhan dapat dilihat pada Lampiran.
+                Berikut adalah penjelasan singkat dalam pengajuan permohonan penawaran ini:
+            </p>"
+        );
+
+        $day_deadline = date_create('NOW')->modify('+7 day')->format('d F Y');
+
+        $mpdf->WriteHTML(
+            "<ol style='$text_justify $font_size'>
+                <li>
+                    Perusahaan yang telah diundang dipersilahkan untuk melampirkan
+                    penawaran harga dengan syarat sebagai berikut:
+                    <ol>
+                        <li>
+                            Profil Perusahaan
+                            <ol style='list-style-type: lower-alpha;'>
+                                <li>
+                                    Salinan Surat Izin Tempat Usaha / Surat Keterangan Domisili Perusahaan
+                                    dari instansi berwenang.
+                                </li>
+                                <li>Salinan Nomor Pokok Wajib Pajak (NPWP)</li>
+                                <li>Salinan surat pengukuhan pengusaha kena pajak</li>
+                                <li>Salinan Tanda Daftar Perusahaan (TDP)</li>
+                                <li>Salinan Surat Izin Usaha Perdagangan (SIUP)</li>
+                                <li>Salinan Surat neraca perusahaan (kualifikasi perusahaan)</li>
+                                <li>Salinan akta pendirian/anggaran dasar penyedia barang/jasa</li>
+                                <li>Salinan tanda pengenal pengurus</li>
+                                <li>Salinan surat perjanjian keagenan/distributor</li>
+                                <li>Daftar pengalaman kerja 2 (dua) tahun terakhir</li>
+                                <li>Surat pernyataan asli di atas materai bahwa semua informasi yang disampaikan adalah benar</li>
+                                <li>Pakta Integritas dan Surat Pernyataan (format terlampir)</li>
+                            </ol>
+                        </li>
+                        <li>Surat pengantar penawaran harga</li>
+                        <li>Lampiran penawaran harga harus sesuai dengan spesifikasi yang dilampirkan</li>
+                    </ol>
+                </li>
+                <li>
+                    Perusahaan yang telah menerima surat undangan resmi ini diberikan waktu untuk mengirimkan penawaran
+                    sampai dengan tanggal <span style='$font_bold'>$day_deadline</span>
+                </li>
+                <li>
+                    Surat permohonan penawaran dalam bentuk <span style='$font_italic'>softcopy</span> dapat dikirimkan ke alamat email:
+                    <ol style='list-style-type: none;'>
+                        <li><a href='mailto:procurement@universitaspertamina.ac.id'>procurement@universitaspertamina.ac.id</a></li>
+                        <li><a href='mailto:$proc_manager->email'>$proc_manager->email</a></li>
+                    </ol>
+                </li>
+            </ol>"
+        );
+
+        $mpdf->WriteHTML(
+            "<p style='$text_justify $font_size'>
+                Demikian surat undangan ini kami sampaikan, atas perhatian dan kerja samanya kami ucapkan terima kasih.
+            </p>"
+        );
+
+        return $mpdf->Output('Test.pdf', "I");
+    }
+
+    private function integerToRoman($integer)
+    {
+        // Convert the integer into an integer (just to make sure)
+        $integer = intval($integer);
+        $result = '';
+    
+        // Create a lookup array that contains all of the Roman numerals.
+        $lookup = array('M' => 1000,
+        'CM' => 900,
+        'D' => 500,
+        'CD' => 400,
+        'C' => 100,
+        'XC' => 90,
+        'L' => 50,
+        'XL' => 40,
+        'X' => 10,
+        'IX' => 9,
+        'V' => 5,
+        'IV' => 4,
+        'I' => 1);
+    
+        foreach($lookup as $roman => $value){
+        // Determine the number of matches
+        $matches = intval($integer/$value);
+    
+        // Add the same number of characters to the string
+        $result .= str_repeat($roman,$matches);
+    
+        // Set the integer to be the remainder of the integer and the value
+        $integer = $integer % $value;
+        }
+    
+        // The Roman numeral should be built, return it
+        return $result;
+    }   
 }

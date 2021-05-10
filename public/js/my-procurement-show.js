@@ -31,7 +31,7 @@ $(document).ready(function(){
             $(this).fadeToggle(() => {
                 $(expandedBtn[index]).fadeToggle()
             })
-            $(unitContent[index]).fadeToggle()
+            $(unitContent[index]).slideToggle()
             
             event.preventDefault()
         })
@@ -42,7 +42,7 @@ $(document).ready(function(){
             $(expandedBtn[index]).fadeToggle(() =>{
                 $(expandBtn[index]).fadeToggle()
             })
-            $(unitContent[index]).fadeToggle()
+            $(unitContent[index]).slideToggle()
 
             event.preventDefault()
         })
