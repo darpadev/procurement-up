@@ -821,7 +821,9 @@ class ProcurementController extends Controller
             </p>"
         );
 
-        return $mpdf->Output('Test.pdf', "I");
+        $doc_name = "SPPH_" . $request->vendor . "_" . $procurement->name . "_" . date('Ymd-His') . ".pdf";
+
+        return $mpdf->Output($doc_name, "I");
     }
 
     private function integerToRoman($integer)
