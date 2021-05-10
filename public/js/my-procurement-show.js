@@ -49,17 +49,20 @@ $(document).ready(function(){
     })
 
     quotationBtn = $('.quotation-btn')
+    quotationNum = []
     closeQuotationBtn = $('.close-quotation-btn')
     quotationContent = $('.quotation-content')
 
     quotationBtn.each(index => {
+        quotationNum.push($(quotationBtn[index]).find($('span.badge')).text())
+
         $(quotationBtn[index]).mouseenter(function(event){
             $(this).html('Lihat Penawaran')
             event.preventDefault()
         })
 
         $(quotationBtn[index]).mouseleave(function(event){
-            $(this).html('Quotation Available: <span class="badge badge-light">4</span>')
+            $(this).html(`Quotation Available: <span class="badge badge-light">${quotationNum[index]}</span>`)
             event.preventDefault()
         })
 
@@ -69,6 +72,8 @@ $(document).ready(function(){
             event.preventDefault()
         })
     })
+
+    console.log($(quotationNum))
 
     closeQuotationBtn.each(index => {
         $(closeQuotationBtn[index]).click(event => {
