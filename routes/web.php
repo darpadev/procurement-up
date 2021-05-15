@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\BidderListController;
 use App\Http\Controllers\ProcurementController;
 
@@ -23,6 +24,10 @@ Route::middleware(['auth'])->group(function () {
     // HomeController
     Route::get('/', [HomeController::class, 'index'])->name('home');
 
+    // DocumentController
+    Route::post('/generate-spph', [DocumentController::class, 'generateSpph'])->name('generate-spph');
+
+
     // ProcurementController
     Route::get('/new-procurement', [ProcurementController::class, 'create'])->name('new-procurement');
     Route::get('/my-procurement', [ProcurementController::class, 'index'])->name('my-procurement');
@@ -35,7 +40,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/store-procurement', [ProcurementController::class, 'store'])->name('store-procurement');
         Route::post('/update-procurement/{id}', [ProcurementController::class, 'update'])->name('update-procurement');
         Route::post('/doc-upload', [ProcurementController::class, 'docUpload']);
-        Route::post('/generate-spph', [ProcurementController::class, 'generateSpph'])->name('generate-spph');
         Route::get('/doc-destroy/{proc}/{id}', [ProcurementController::class, 'docDestroy'])->name('doc-destroy');
         
     // UserController
