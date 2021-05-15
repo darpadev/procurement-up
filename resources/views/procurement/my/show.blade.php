@@ -100,7 +100,27 @@
             <div class="d-flex justify-content-center">
                 <form action="{{ Route('update-procurement', ['id' => $procurement->id]) }}" method="post">
                     @csrf
-                    @if (($role == 'Wakil Rektor' And $unit[0]->name == 'Wakil Rektor 2') Or ($role == 'Direktur' And $origin == 'Fungsi Pengelola Fasilitas Universitas') Or ($role == 'Manajer' And $unit[0]->name == 'Fungsi Pengadaan Barang dan Jasa'))
+                    @if ($role == 'Manajer' And $unit[0]->name == 'Fungsi Pengadaan Barang dan Jasa')
+                        @php
+                            $pic_list = \App\Models\User::join('units', 'units.id', '=', 'users.unit')
+                                            ->select('users.id', 'users.name')
+                                            ->where('units.name', 'LIKE', '%Pengadaan%')
+                                            ->orderBy('users.role', 'ASC')
+                                            ->get()
+                        @endphp
+                        <div class="form-group row align-items-center">
+                            <label class="col-md-auto" for="pic">PIC:</label>
+                            <select class="form-control col mb-3" name="pic" id="pic" required>
+                                <option></option>
+                                @foreach ($pic_list as $pic)
+                                    <option value="{{ $pic->id }}">{{ $pic->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="row justify-content-center">
+                            <button class="btn btn-primary" name="assign">Kirim ke Staf</button>
+                        </div>
+                    @elseif (($role == 'Wakil Rektor' And $unit[0]->name == 'Wakil Rektor 2') Or ($role == 'Direktur' And $origin == 'Fungsi Pengelola Fasilitas Universitas'))
                         <button class="btn btn-primary" name="approve">Disposisi</button>
                     @else
                         <button class="btn btn-primary" name="approve">Approve</button>

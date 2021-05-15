@@ -42,7 +42,7 @@
                 @endforeach
 
                 <div class="d-flex justify-content-center">
-                    <a href="{{ url()->previous() }}" class="btn btn-danger mr-3">Cancel</a>
+                    <a href="{{ url()->previous() }}" class="btn btn-danger mr-3">Back</a>
                     <button class="btn btn-primary" name="generate">Generate</button>
                 </div> 
 

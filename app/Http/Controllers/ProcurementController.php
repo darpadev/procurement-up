@@ -559,10 +559,6 @@ class ProcurementController extends Controller
                 $next_approver = 6;
                 $next_approver_origin = 2;
                 $next_approver_unit = 4;
-            }elseif ($role == 'Manajer' And $unit[0]->name= 'Fungsi Pengadaan Barang dan Jasa'){
-                $next_approver = 7;
-                $next_approver_origin = 2;
-                $next_approver_unit = 4;
             }
 
             \App\Models\Procurement::where('id', '=', $id)
@@ -575,8 +571,6 @@ class ProcurementController extends Controller
             
             if($next_approver == 6 And $next_approver_unit == 4){
                 $message = 'Pengadaan sudah didisposisikan ke Manajer Fungsi Pengadaan Barang dan Jasa';
-            }elseif ($next_approver == 7 And $next_approver_unit == 4){
-                $message = 'Pengadaan sudah diteruskan ke Staf Fungsi Pengadaan Barang dan Jasa';
             }else{
                 $message = 'Pengadaan disetujui';
             }
@@ -634,6 +628,31 @@ class ProcurementController extends Controller
                 'message' => 'Informasi pengadaan telah diperbaharui',
                 'sender' => Auth::user()->id,
                 'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+        }elseif (isset($_POST['assign'])){
+            \App\Models\Procurement::where('id', '=', $id)
+                ->update([
+                    'pic' => $request->pic
+                ]);
+            
+            $next_approver = 7;
+            $next_approver_origin = 2;
+            $next_approver_unit = 4;
+
+            \App\Models\Procurement::where('id', '=', $id)
+                ->update([
+                    'approver' => $next_approver,
+                    'approver_origin' => $next_approver_origin,
+                    'approver_unit' => $next_approver_unit,
+                    'approval_status' => "Disetujui"
+                ]);
+
+            \App\Models\ProcLog::insert([
+                'procurement' => $id, 
+                'message' => 'Pengadaan sudah diteruskan ke Staf Fungsi Pengadaan Barang dan Jasa', 
+                'sender' => Auth::user()->id, 
+                'created_at' => date('Y-m-d H:i:s'), 
                 'updated_at' => date('Y-m-d H:i:s')
             ]);
         }
@@ -712,11 +731,24 @@ class ProcurementController extends Controller
             ->where('roles.name', '=', 'Manajer')
             ->where('units.name', '=', 'Fungsi Pengadaan Barang dan Jasa')
             ->get()[0];
+        $pic = \App\Models\User::join('procurements', 'procurements.pic', '=', 'users.id')
+            ->select('email')
+            ->get()[0];
+
+        $mail_list = "
+        <li><a href='mailto:procurement@universitaspertamina.ac.id'>procurement@universitaspertamina.ac.id</a></li>
+        <li><a href='mailto:$proc_manager->email'>$proc_manager->email</a></li>
+        ";
+
+        if($proc_manager->email != $pic->email){
+            $mail_list .= "<li><a href='mailto:$pic->email'>$pic->email</a></li>";
+        }
 
         // CSS
         $font_bold = "font-weight: bold;";
         $font_italic = "font-style: italic;";
-        $font_size = "font-size: 10pt;";
+        $font_size_body = "font-size: 10pt;";
+        $font_size_footer = "font-size: 7pt;";
         $text_justify = "text-align: justify; text-justify: inter-word;";
 
         $mpdf = new \Mpdf\Mpdf([
@@ -732,11 +764,30 @@ class ProcurementController extends Controller
             </div>"
         );
 
+        $mpdf->SetHTMLFooter(
+            "
+            <div style='width: 100%; height: 1;'>
+                <p style='$font_size_footer'>
+                    Gedung Rektorat (R1)
+                    <br>
+                    Kawasan Universitas Pertamina
+                    <br>
+                    Jl. Teuku Nyak Arief
+                    <br>
+                    Simprug, Kebayoran Lama, Jakarta Selatan. 12220.
+                    <br>
+                    Telp. (+62) 21 722 3029
+                </p>
+            </div>
+            <div style='background-color: #4091f5; width: 100%; height: 30px; border-radius: 0 100% 0 0;'></div>
+            "
+        );
+
         setlocale(LC_TIME, 'id_ID');
-        $mpdf->WriteHTML("<p style='$font_size'>Jakarta, " . strftime('%d %B %Y') .  '</p>');
+        $mpdf->WriteHTML("<p style='$font_size_body'>Jakarta, " . strftime('%d %B %Y') .  '</p>');
 
         $mpdf->WriteHTML(
-            "<table style='$font_size'>
+            "<table style='$font_size_body'>
                 <tr>
                     <td>Nomor</td>
                     <td>:</td>
@@ -756,10 +807,10 @@ class ProcurementController extends Controller
         );
 
         $mpdf->WriteHTML(
-            "<p style='$font_bold $font_size'>
+            "<p style='$font_bold $font_size_body'>
                 Yth. $request->receiver $request->vendor,
             </p>
-            <p style='$text_justify $font_size'>
+            <p style='$text_justify $font_size_body'>
                 Dengan hormat, sehubungan dengan memorandum no. $procurement->ref 
                 pada tanggal " . date("d F Y", strtotime($procurement->created_at)) . "
                 tentang <span style='$font_bold'>$procurement->name</span>, 
@@ -769,10 +820,10 @@ class ProcurementController extends Controller
             </p>"
         );
 
-        $day_deadline = date_create('NOW')->modify('+7 day')->format('d F Y');
+        $day_deadline = date_create('NOW')->modify('+14 day')->format('d F Y');
 
         $mpdf->WriteHTML(
-            "<ol style='$text_justify $font_size'>
+            "<ol style='$text_justify $font_size_body'>
                 <li>
                     Perusahaan yang telah diundang dipersilahkan untuk melampirkan
                     penawaran harga dengan syarat sebagai berikut:
@@ -808,15 +859,14 @@ class ProcurementController extends Controller
                 <li>
                     Surat permohonan penawaran dalam bentuk <span style='$font_italic'>softcopy</span> dapat dikirimkan ke alamat email:
                     <ol style='list-style-type: none;'>
-                        <li><a href='mailto:procurement@universitaspertamina.ac.id'>procurement@universitaspertamina.ac.id</a></li>
-                        <li><a href='mailto:$proc_manager->email'>$proc_manager->email</a></li>
+                        $mail_list
                     </ol>
                 </li>
             </ol>"
         );
 
         $mpdf->WriteHTML(
-            "<p style='$text_justify $font_size'>
+            "<p style='$text_justify $font_size_body'>
                 Demikian surat undangan ini kami sampaikan, atas perhatian dan kerja samanya kami ucapkan terima kasih.
             </p>"
         );
