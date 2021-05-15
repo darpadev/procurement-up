@@ -3,14 +3,88 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DocumentController extends Controller
 {
+    public function upload(Request $request, $doc_name){
+        $pdo = DB::getPdo();
+
+        $file = $_FILES[$doc_name];
+
+        $id = $request->id;
+        $procurement = $request->procurement;
+        $vendor = $request->vendor;
+        $item = $request->item;
+
+        $name = $file['name'];
+        $doc_type = $file['type'];
+        $doc = file_get_contents($file['tmp_name']);
+        $date = date('Y-m-d H:i:s');
+        $type = $doc_name;
+        
+        if($doc_name == 'quotation'){
+            $stmt = $pdo->prepare("UPDATE quotations 
+                                    SET name=?, type=?, doc_type=?, doc=?, updated_at=? 
+                                    WHERE id=? AND procurement=? AND vendor=? AND item=?");
+            $stmt->bindParam(1, $name);
+            $stmt->bindParam(2, $type);
+            $stmt->bindParam(3, $doc_type);
+            $stmt->bindParam(4, $doc);
+            $stmt->bindParam(5, $date);
+            $stmt->bindParam(6, $id);
+            $stmt->bindParam(7, $procurement);
+            $stmt->bindParam(8, $vendor);
+            $stmt->bindParam(9, $item);
+
+            $stmt->execute();
+        }elseif ($doc_name == 'spph'){
+            if ($request->procurement_stats != 'spph'){
+                $new_status = \App\Models\Status::select('id')->where('name', '=', 'SPPH')->get()[0];
+                \App\Models\Procurement::where('id', '=', $request->procurement)
+                    ->update([
+                        'status' => $new_status->id,
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ]);
+            }
+
+            $stmt = $pdo->prepare("INSERT INTO vendor_docs VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bindParam(1, $procurement);
+            $stmt->bindParam(2, $vendor);
+            $stmt->bindParam(3, $item);
+            $stmt->bindParam(4, $name);
+            $stmt->bindParam(5, $type);
+            $stmt->bindParam(6, $doc_type);
+            $stmt->bindParam(7, $doc);
+            $stmt->bindParam(8, $date);
+            $stmt->bindParam(9, $date);
+
+            $stmt->execute();
+        }
+
+        return (redirect(url()->previous()));
+    }
+
+    public function view($id){
+        $pdo = DB::getPdo();
+
+        $row = $pdo->prepare("SELECT * FROM quotations WHERE id = ?");
+        $row->bindParam(1, $id);
+
+        $row->execute();
+
+        $data = $row->fetch();
+        
+        return view('procurement.my.doc', [
+            'data' => $data,
+        ]);
+    }
+
     public function generateSpph(Request $request){
         $procurement = \App\Models\Procurement::where('id', '=', $request->proc_id)->get()[0];
         $vendor = \App\Models\Vendor::where('id', '=', $request->vendor_id)->get()[0];
         $items = \App\Models\Quotation::join('items', 'items.id', '=', 'quotations.item')
-            ->select('items.name', 'items.specs')
+            ->select('items.name', 'items.specs', 'items.qty')
             ->where('quotations.vendor', '=', $request->vendor_id)
             ->get();
         $proc_manager = \App\Models\User::join('roles', 'roles.id', '=', 'users.role')
@@ -36,13 +110,17 @@ class DocumentController extends Controller
         $font_bold = "font-weight: bold;";
         $font_italic = "font-style: italic;";
         $font_size_body = "font-size: 10pt;";
-        $font_size_footer = "font-size: 7pt;";
+        $font_size_footer = "font-size: 6pt;";
         $text_justify = "text-align: justify; text-justify: inter-word;";
 
         $mpdf = new \Mpdf\Mpdf([
             'setAutoTopMargin' => 'stretch',
             'setAutoBottomMargin' => 'stretch'
         ]);
+
+        $doc_name = "SPPH_" . $request->vendor . "_" . $procurement->name . "_" . date('Ymd-His');
+
+        $mpdf->SetTitle($doc_name);
 
         $header_logo_path = asset('img/universitas-pertamina.png');
 
@@ -159,7 +237,94 @@ class DocumentController extends Controller
             </p>"
         );
 
-        $doc_name = "SPPH_" . $request->vendor . "_" . $procurement->name . "_" . date('Ymd-His') . ".pdf";
+        $mpdf->AddPageByArray(['type' => '']);
+
+        $mpdf->WriteHTML(
+            "<p style='$font_size_body $font_bold text-align: center;'>Lampiran Kebutuhan</p>"
+        );
+        
+        $table_style = $font_size_body . "border-collapse: collapse; border: 1px solid black; width: 75%; margin-left: auto; margin-right: auto;";
+        $table_border = "border: 1px solid black;";
+
+        $item_list = "";
+
+        foreach ($items as $item){
+            $item_list .= "
+            <tr style='$table_border'>
+                <td style='$table_border'>$item->name</td>
+                <td style='$table_border'>$item->specs</td>
+                <td style='$table_border text-align: center;'>$item->qty</td>
+            </tr>";
+        }
+
+        $mpdf->WriteHTML(
+            "<table style='$table_style'>
+                <thead>
+                    <tr style='$table_border'>
+                        <th style='$table_border'>Perangkat</th>
+                        <th style='$table_border'>Spesifikasi</th>
+                        <th style='$table_border'>Kebutuhan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    $item_list
+                </tbody>
+            </table>"
+        );
+
+        $mpdf->WriteHTML(
+            "<p style='$font_size_body $text_justify'>
+                * Spesifikasi yang disebutkan adalah referensi perangkat yang dibutuhkan. 
+                Vendor diperbolehkan untuk mengirimkan alat dengan merek/tipe lain selama spesifikasi minimum berdasarkan
+                alat referensi yang kami sebutkan terpenuhi.
+                Dalam proses evaluasi, kriteria yang digunakan adalah pemenuhan spesifikasi minimum, harga, dan layanan purna jual.
+            </p>"
+        );
+
+        $mpdf->WriteHTML(
+            "<p style='$font_size_body $font_bold'>
+                Kriteria Penilaian:
+                <br>
+                Berikut kriteria penilaian untuk setiap penawaran yang masuk:
+            </p>"
+        );
+
+        $mpdf->WriteHTML(
+            "<table style='$table_style'>
+                <thead>
+                    <tr style='$table_border background-color: #99e6ff;'>
+                        <th style='$table_border'>Item Penilaian</th>
+                        <th style='$table_border'>Bobot</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style='$table_border'>
+                        <th style='$table_border text-align: left;'>Spesifikasi</th>
+                        <th style='$table_border text-align: center;'>Mandatory <br> (Spesifikasi minimum wajib terpenuhi)</th>
+                    </tr>
+                    <tr style='$table_border'>
+                        <th style='$table_border text-align: left;'>Garansi</th>
+                        <th style='$table_border text-align: center;'>Wajib memberi garansi (wajib terpenuhi) <br> Menyampaikan jenis garansi yang ditawarkan</th>
+                    </tr>
+                    <tr style='$table_border'>
+                        <th style='$table_border text-align: left;'>Harga</th>
+                        <th style='$table_border text-align: center;'>80%</th>
+                    </tr>
+                    <tr style='$table_border'>
+                        <th style='$table_border text-align: left;'>Komitmen waktu penyelesaian</th>
+                        <th style='$table_border text-align: center;'>20%</th>
+                    </tr>
+                </tbody>
+            </table>"
+        );
+
+        $mpdf->WriteHTML(
+            "<p style='$font_size_body $font_bold'>
+                Catatan: Kelengkapan dokumen perusahaan harus sesuai dengan Ketentuan Pengadaan Universitas Pertamina
+            </p>"
+        );
+
+        $doc_name = $doc_name . ".pdf";
 
         return $mpdf->Output($doc_name, "I");
     }

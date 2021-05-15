@@ -25,8 +25,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
 
     // DocumentController
-    Route::post('/generate-spph', [DocumentController::class, 'generateSpph'])->name('generate-spph');
+        // Upload Document
+        Route::post('/upload/{name}', [DocumentController::class, 'upload'])->name('upload');
 
+        // Export Document 
+        Route::post('/generate-spph', [DocumentController::class, 'generateSpph'])->name('generate-spph');
+        Route::get('/view/{id}', [DocumentController::class, 'view'])->name('view-document-vendor');
 
     // ProcurementController
     Route::get('/new-procurement', [ProcurementController::class, 'create'])->name('new-procurement');

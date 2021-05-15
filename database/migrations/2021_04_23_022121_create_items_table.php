@@ -18,7 +18,9 @@ class CreateItemsTable extends Migration
             $table->foreignId('procurement')->constrained('procurements');
             $table->string('name');
             $table->string('specs');
-            $table->integer('price');
+            $table->integer('oe');
+            $table->integer('quotation_price')->nullable();
+            $table->integer('nego_price')->nullable();
             $table->integer('qty');
             $table->timestamps();
         });

@@ -140,7 +140,7 @@
         @php $total = 0 @endphp
         @foreach ($items as $item)
             @php
-                $total += ($item->price * $item->qty)
+                $total += ($item->oe * $item->qty)
             @endphp
             <div class="row">
                 <div class="col-md-auto"><h5 class="font-weight-bold">{{ str_pad($loop->iteration, strlen(count($items)), 0, STR_PAD_LEFT) }}</h5></div>
@@ -163,7 +163,7 @@
                                     <table class="table w-75">
                                         <thead>
                                             <tr>
-                                                <th class="text-center">Harga Satuan</th>
+                                                <th class="text-center">Harga Satuan (OE)</th>
                                                 <th class="text-center" style="white-space: nowrap; width: 1%;">Jumlah</th>
                                                 <th class="text-center">Total Harga</th>
                                             </tr>
@@ -173,20 +173,42 @@
                                                 <td>
                                                     <div class="d-flex justify-content-between">
                                                         <span>Rp</span>
-                                                        <span>{{ number_format($item->price, 2, ',', '.') }}</span>
+                                                        <span>{{ number_format($item->oe, 2, ',', '.') }}</span>
                                                     </div>
                                                 </td>
                                                 <td class="text-center">{{ $item->qty }}</td>
                                                 <td>
                                                     <div class="d-flex justify-content-between">
                                                         <span>Rp</span>
-                                                        <span>{{ number_format($item->qty * $item->price, 2, ',', '.') }}</span>
+                                                        <span>{{ number_format($item->qty * $item->oe, 2, ',', '.') }}</span>
                                                     </div>
                                                 </td>
                                             </tr>
                                         </tbody>
                                     </table>
                                 </div>
+                                <table>
+                                    <tr>
+                                        <th>Harga Penawaran</th>
+                                        <th>:</th>
+                                        <td>
+                                            <div class="d-flex justify-content-between">
+                                                <span>Rp</span>
+                                                <span>{{ number_format($item->quotation_price, 2, ',', '.') }}</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Harga Negosiasi</th>
+                                        <th>:</th>
+                                        <td>
+                                            <div class="d-flex justify-content-between">
+                                                <span>Rp</span>
+                                                <span>{{ number_format($item->nego_price, 2, ',', '.') }}</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
                             </div>
                         </div>
                         <div class="col-md-auto">
@@ -207,7 +229,7 @@
                     <div class="row quotation-content" style="display: none">
                         <div class="col-12">
                             <hr>
-                            <div class="row">
+                            <div class="row mb-2">
                                 <div class="col">
                                     <h5 class="font-weight-bold">Daftar Vendor</h5>
                                 </div>
@@ -231,23 +253,65 @@
                                                 <tr>
                                                     <td class="text-right">{{ $loop->iteration }}</td>
                                                     <td>{{ $quotation->vendor_name }}</td>
-                                                    <td class="text-center w-25">
+                                                    <td class="text-center w-50">
                                                         @if ($quotation->doc != NULL)
-                                                            <a href="">{{ $quotation->name }}</a>
+                                                            <a href="{{ Route('view-document-vendor', ['id' => $quotation->id]) }}">{{ $quotation->name }}</a>
                                                         @else
-                                                            <span class="badge badge-danger p-2">Not Available</span>
+                                                            @if (\App\Models\VendorDoc::where('procurement', '=', $quotation->procurement)->where('vendor', '=', $quotation->vendor)->where('item', '=', $quotation->item)->where('type', '=', 'spph')->doesntExist())
+                                                                <span class="badge badge-warning text-dark mb-3">SPPH belum diunggah</span>
+                                                                <br>
+                                                                <form action="/upload/spph" method="post" enctype="multipart/form-data">
+                                                                    @csrf
+                                                                    <input type="hidden" name="procurement_stats" value="{{ $procurement->status_name }}">
+                                                                    <input type="hidden" name="id" value="{{ $quotation->id }}">
+                                                                    <input type="hidden" name="procurement" value="{{ $quotation->procurement }}">
+                                                                    <input type="hidden" name="vendor" value="{{ $quotation->vendor }}">
+                                                                    <input type="hidden" name="item" value="{{ $quotation->item }}">
+                                                                    <div class="form-group row">
+                                                                        <div class="col-md-auto">
+                                                                            <label for="spph_file">SPPH:</label>
+                                                                        </div>
+                                                                        <div class="col">
+                                                                            <input type="file" class="form-control-file" name="spph" accept="application/pdf">
+                                                                        </div>
+                                                                        <div class="col-md-auto">
+                                                                            <button class="btn btn-sm btn-primary" name="upload">Upload</button>
+                                                                        </div>
+                                                                    </div>
+                                                                </form>
+                                                            @else
+                                                                <span class="badge badge-primary mb-3">Unggah Quotation/Penawaran</span>
+                                                                <form action="/upload/quotation" method="post" enctype="multipart/form-data">
+                                                                    @csrf
+                                                                    <input type="hidden" name="id" value="{{ $quotation->id }}">
+                                                                    <input type="hidden" name="procurement" value="{{ $quotation->procurement }}">
+                                                                    <input type="hidden" name="vendor" value="{{ $quotation->vendor }}">
+                                                                    <input type="hidden" name="item" value="{{ $quotation->item }}">
+                                                                    <div class="form-group row">
+                                                                        <div class="col">                                                                            
+                                                                            <input class="form-control-file mb-2" type="file" name="quotation" accept="application/pdf">
+                                                                        </div>
+                                                                        <div class="col-md-auto">                                                                            
+                                                                            <button class="btn btn-sm btn-primary" name="upload">Upload</button>
+                                                                        </div>
+                                                                    </div>
+                                                                </form>
+                                                            @endif
                                                         @endif
                                                     </td>
                                                     <td class="text-center" style="width: 1%; white-space: nowrap;">
-                                                        <a 
-                                                            href="{{ Route('generate-spph-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" 
-                                                            target="_blank"
-                                                            class="badge badge-primary mb-2 p-2">
-                                                            Generate SPPH
-                                                        </a>
-                                                        <a href="" class="badge badge-warning text-dark mb-2 p-2">Buat PO</a>
-                                                        <br>
-                                                        <a href="" class="badge badge-success mb-2 p-2">Pemenang Tender</a>
+                                                        @if (!$quotation->name)
+                                                            <a 
+                                                                href="{{ Route('generate-spph-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" 
+                                                                target="_blank"
+                                                                class="badge badge-primary mb-2 p-2">
+                                                                Generate SPPH
+                                                            </a>
+                                                        @elseif ($quotation->name And !$quotation->winner)
+                                                            <a href="" class="badge badge-success mb-2 p-2">Pemenang Tender</a>
+                                                        @elseif ($quotation->name And $quotation->winner)
+                                                            <a href="" class="badge badge-warning text-dark mb-2 p-2">Buat PO</a>
+                                                        @endif                                                        
                                                     </td>
                                                 </tr>
                                             @endif

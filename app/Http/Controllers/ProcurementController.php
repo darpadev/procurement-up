@@ -393,7 +393,6 @@ class ProcurementController extends Controller
         $tor = array('available' => false, 'index' => 0);
         $spec = array('available' => false, 'index' => 0);
 
-
         foreach ($documents as $index => $doc){
             if ($doc->type == 'ToR'){
                 $tor['available'] = true;
