@@ -21,7 +21,7 @@ class CreateQuotationsTable extends Migration
             $table->foreignId('item')->constrained('items');
             $table->string('name')->nullable();
             $table->string('doc_type')->nullable();
-            $table->boolean('winner')->nullable();
+            $table->boolean('winner')->default(0);
             $table->timestamps();
         });
 
