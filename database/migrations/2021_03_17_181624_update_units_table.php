@@ -15,9 +15,9 @@ class UpdateUnitsTable extends Migration
     {
 
         DB::table('units')->insert([
-            ['name' => 'Wakil Rektor 1', 'parent' => 1, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
-            ['name' => 'Wakil Rektor 2', 'parent' => 1, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
-            ['name' => 'Wakil Rektor 3', 'parent' => 1, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['name' => 'Bidang Akademik dan Kemahasiswaan Universitas Pertamina', 'parent' => 1, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['name' => 'Bidang Keuangan dan Sumber Daya Organisasi Universitas Pertamina', 'parent' => 1, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['name' => 'Bidang Penelitian, Pengembangan dan Kerjasama Universitas Pertamina', 'parent' => 1, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
             ['name' => 'Fungsi Pengadaan Barang dan Jasa', 'parent' => 2, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
             ['name' => 'Teknik Kimia', 'parent' => 4, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
             ['name' => 'Teknik Mesin', 'parent' => 4, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],

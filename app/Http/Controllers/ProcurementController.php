@@ -22,7 +22,7 @@ class ProcurementController extends Controller
         $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->get()[0]['name'];
         $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->get();
 
-        if (($role == 'Wakil Rektor' And (isset($unit[0]->name) And $unit[0]->name == 'Wakil Rektor 2')) Or ($role == 'Direktur' And $origin == 'Fungsi Pengelola Fasilitas Universitas') Or (($role == 'Manajer' Or $role == 'Staf') And $unit[0]->name == 'Fungsi Pengadaan Barang dan Jasa')){
+        if (($role == 'Wakil Rektor' And (isset($unit[0]->name) And $unit[0]->name == 'Bidang Keuangan dan Sumber Daya Organisasi')) Or ($role == 'Direktur' And $origin == 'Fungsi Pengelola Fasilitas Universitas') Or (($role == 'Manajer' Or $role == 'Staf') And $unit[0]->name == 'Fungsi Pengadaan Barang dan Jasa')){
             switch ($_GET['stats']) {
                 case 'all':
                     $procurements = \App\Models\Procurement::join('statuses', 'procurements.status', '=', 'statuses.id')
@@ -241,7 +241,7 @@ class ProcurementController extends Controller
 
         if(isset($_POST['submit'])){
             if ($role == 'Wakil Rektor'){
-                if($unit == 'Wakil Rektor 2'){
+                if($unit == 'Bidang Keuangan dan Sumber Daya Organisasi'){
                     $approver = 3;
                     $approver_origin = 2;
                     $approver_unit = NULL;
@@ -290,7 +290,7 @@ class ProcurementController extends Controller
             if(isset($approver_unit) And $approver_unit == 2){
                 \App\Models\ProcLog::insert([
                     'procurement' => $proc_id, 
-                    'message' => "Menunggu persetujuan Wakil Rektor 2", 
+                    'message' => "Menunggu persetujuan Wakil Rektor II", 
                     'sender' => Auth::user()->id, 
                     'created_at' => date('Y-m-d H:i:s'), 
                     'updated_at' => date('Y-m-d H:i:s')
@@ -586,7 +586,7 @@ class ProcurementController extends Controller
                 if ($next_approver_unit == 2){
                     \App\Models\ProcLog::insert([
                         'procurement' => $id, 
-                        'message' => "Menunggu persetujuan Wakil Rektor 2", 
+                        'message' => "Menunggu persetujuan Wakil Rektor II", 
                         'sender' => Auth::user()->id, 
                         'created_at' => date('Y-m-d H:i:s'), 
                         'updated_at' => date('Y-m-d H:i:s')
@@ -697,59 +697,4 @@ class ProcurementController extends Controller
     public function downloadTemplate(){
         return redirect( Url('/resc/TOR_Unit-List_Template.xlsx') );
     }
-
-    public function generateSpphForm($proc_id, $vendor_id){
-        $date = '/UND/' . $this->integerToRoman(date('n')) . date('/Y');
-        $vendor = \App\Models\Vendor::select('name')->where('id', '=', $vendor_id)->get()[0];
-        $procurement = \App\Models\Procurement::select('ref', 'name')->where('id', '=', $proc_id)->get()[0];
-        $items = \App\Models\Quotation::join('items', 'items.id', '=', 'quotations.item')
-            ->select('items.name', 'items.specs')
-            ->where('quotations.vendor', '=', $vendor_id)
-            ->get();
-        
-        return view('procurement.documents.form', [
-            'proc_id' => $proc_id,
-            'vendor_id' => $vendor_id,
-            'date' => $date,
-            'vendor' => $vendor,
-            'procurement' => $procurement,
-            'items' => $items,
-        ]);
-    }
-
-    private function integerToRoman($integer)
-    {
-        // Convert the integer into an integer (just to make sure)
-        $integer = intval($integer);
-        $result = '';
-    
-        // Create a lookup array that contains all of the Roman numerals.
-        $lookup = array('M' => 1000,
-        'CM' => 900,
-        'D' => 500,
-        'CD' => 400,
-        'C' => 100,
-        'XC' => 90,
-        'L' => 50,
-        'XL' => 40,
-        'X' => 10,
-        'IX' => 9,
-        'V' => 5,
-        'IV' => 4,
-        'I' => 1);
-    
-        foreach($lookup as $roman => $value){
-        // Determine the number of matches
-        $matches = intval($integer/$value);
-    
-        // Add the same number of characters to the string
-        $result .= str_repeat($roman,$matches);
-    
-        // Set the integer to be the remainder of the integer and the value
-        $integer = $integer % $value;
-        }
-    
-        // The Roman numeral should be built, return it
-        return $result;
-    }  
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use PDO;
 
 class DocumentController extends Controller
 {
@@ -39,7 +40,7 @@ class DocumentController extends Controller
 
             $stmt->execute();
         }elseif ($doc_name == 'spph'){
-            if ($request->procurement_stats != 'spph'){
+            if (\App\Models\VendorDoc::where('procurement', '=', $procurement)->where('type', '=', 'spph')->doesntExist()){
                 $new_status = \App\Models\Status::select('id')->where('name', '=', 'SPPH')->get()[0];
                 \App\Models\Procurement::where('id', '=', $request->procurement)
                     ->update([
@@ -328,4 +329,228 @@ class DocumentController extends Controller
 
         return $mpdf->Output($doc_name, "I");
     }
+
+    public function generateBapp(Request $request){
+        for ($i=0; $i < count($request->quotation_price); $i++) { 
+            \App\Models\Item::where('id', '=', $request->item[$i])
+                ->update([
+                    'quotation_price' => $request->quotation_price[$i],
+                    'nego_price' => $request->nego_price[$i],
+                    'updated_at' => date('Y-m-d H:i:s')
+                ]);
+        }
+
+        $procurement = \App\Models\Procurement::join('proc_mechanisms', 'proc_mechanisms.id', '=', 'procurements.mechanism')
+            ->select('procurements.*', 'proc_mechanisms.name AS mech')
+            ->where('procurements.id', '=', $request->proc_id)->get()[0];
+        
+        $vendors_id = '';
+
+        for ($i=0; $i < count($request->vendor); $i++) { 
+            $vendors_id .= "vendors.id = " . $request->vendor[$i];
+            if(++$i != count($request->vendor)){
+                $vendors_id .= " OR ";
+            }
+        }
+
+        $pdo = DB::getPdo();
+
+        $row = $pdo->prepare("SELECT items.name, items.specs, items.qty, items.quotation_price, items.nego_price, vendors.name AS vendor, vendors.address, vendors.phone, vendors.tin
+                                FROM items INNER JOIN quotations ON items.id = quotations.item INNER JOIN vendors ON vendors.id = quotations.vendor
+                                WHERE $vendors_id");
+
+        $row->execute();
+
+        $items = $row->fetch(PDO::FETCH_ASSOC);
+
+        
+        $receiver = \App\Models\User::join('roles', 'roles.id', '=', 'users.role')
+            ->join('units', 'units.id', '=', 'users.unit')
+            ->select('users.name', 'roles.name AS role', 'units.name AS unit')
+            ->where('roles.name', '=', 'Wakil Rektor')
+            ->where('units.name', '=', 'Bidang Keuangan dan Sumber Daya Organisasi')
+            ->get()[0];
+        $sender = \App\Models\User::join('roles', 'roles.id', '=', 'users.role')
+            ->join('origins', 'origins.id', '=', 'users.origin')
+            ->select('users.name', 'roles.name AS role', 'origins.name AS origin')
+            ->where('roles.name', '=', 'Direktur')
+            ->where('origins.name', '=', 'Fungsi Pengelola Fasilitas Universitas')
+            ->get()[0];
+
+        // CSS
+        $font_bold = "font-weight: bold;";
+        $font_italic = "font-style: italic;";
+        $font_size_body = "font-size: 10pt;";
+        $font_size_footer = "font-size: 6pt;";
+        $text_justify = "text-align: justify; text-justify: inter-word;";
+
+        $mpdf = new \Mpdf\Mpdf([
+            'setAutoTopMargin' => 'stretch',
+            'setAutoBottomMargin' => 'stretch'
+        ]);
+
+        $doc_name = "BAPP_" . $items['vendor'] . "_" . $procurement->name . "_" . date('Ymd-His');
+
+
+        $mpdf->SetTitle($doc_name);
+
+        $header_logo_path = asset('img/universitas-pertamina.png');
+
+        $mpdf->SetHTMLHeader(
+            "<div style='text-align: center;'>
+                <img src='https://universitaspertamina.ac.id/wp-content/uploads/2017/11/logo-Press-201x146.png' width='100'>
+            </div>"
+        );
+
+        $mpdf->SetHTMLFooter(
+            "
+            <div style='width: 100%; height: 1;'>
+                <p style='$font_size_footer'>
+                    Gedung Rektorat (R1)
+                    <br>
+                    Kawasan Universitas Pertamina
+                    <br>
+                    Jl. Teuku Nyak Arief
+                    <br>
+                    Simprug, Kebayoran Lama, Jakarta Selatan. 12220.
+                    <br>
+                    Telp. (+62) 21 722 3029
+                </p>
+            </div>
+            <div style='background-color: #4091f5; width: 100%; height: 30px; border-radius: 0 100% 0 0;'></div>
+            "
+        );
+        
+
+
+        $mpdf->WriteHTML(
+            "<p style='$font_size_body text-align: center;'>
+            <u style='$font_bold font-size: 12pt;'>BERITA ACARA PENUNJUKKAN PEMENANG</u>
+            <br>
+            $request->ref
+            $request->date
+            </p>"
+        );
+        
+        setlocale(LC_TIME, 'id_ID');
+        $mpdf->WriteHTML("<p style='$font_size_body'>Jakarta, " . strftime('%d %B %Y') .  '</p>');
+
+        $mpdf->WriteHTML(
+            "<table style='$font_size_body'>
+                <tr>
+                    <td>Kepada</td>
+                    <td>:</td>
+                    <td>$receiver->role $receiver->unit</td>
+                </tr>
+                <tr>
+                    <td>Dari</td>
+                    <td>:</td>
+                    <td>$sender->role $sender->origin</td>
+                </tr>
+                <tr>
+                    <td>Lampiran</td>
+                    <td>:</td>
+                    <td>1 Bundel</td>
+                </tr>
+                <tr>
+                    <td>Sifat</td>
+                    <td>:</td>
+                    <td>Rahasia/Terbatas</td>
+                </tr>
+                <tr>
+                    <td style='vertical-align: top;'>Perihal</td>
+                    <td style='vertical-align: top;'>:</td>
+                    <td style='$font_bold'>Permohonan Persetujuan Penetapan Pemenang $procurement->name</td>
+                </tr>
+            </table>"
+        );
+
+        $itemVendor = $items['vendor'];
+
+        $mpdf->WriteHTML(
+            "<p style='$font_size_body $text_justify'>
+                Berkaitan dengan:
+                <ol style='$font_size_body $text_justify'>
+                    <li> Memorandum <span style='$font_bold'>$procurement->ref</span> tentang <span style='$font_bold'>$procurement->name</span> pada tanggal " . date('d F Y', strtotime($procurement->created_at)) . ".</li>
+                </ol>
+            </p>"
+        );
+
+        $doc_name = $doc_name . ".pdf";
+
+        return $mpdf->Output($doc_name, "I");
+    }
+
+    public function generateSpphForm($proc_id, $vendor_id){
+        $date = '/UND/' . $this->integerToRoman(date('n')) . date('/Y');
+        $vendor = \App\Models\Vendor::select('name')->where('id', '=', $vendor_id)->get()[0];
+        $procurement = \App\Models\Procurement::select('ref', 'name')->where('id', '=', $proc_id)->get()[0];
+        $items = \App\Models\Quotation::join('items', 'items.id', '=', 'quotations.item')
+            ->select('items.name', 'items.specs')
+            ->where('quotations.vendor', '=', $vendor_id)
+            ->get();
+        
+        return view('procurement.documents.spph.form', [
+            'proc_id' => $proc_id,
+            'vendor_id' => $vendor_id,
+            'date' => $date,
+            'vendor' => $vendor,
+            'procurement' => $procurement,
+            'items' => $items,
+        ]);
+    }
+
+    public function generateBappForm($proc_id, $vendor_id){
+        $date = '/BA/' . $this->integerToRoman(date('n')) . date('/Y');
+        $procurement = \App\Models\Procurement::select('ref', 'name')->where('id', '=', $proc_id)->get()[0];
+        $items = \App\Models\Quotation::join('items', 'items.id', '=', 'quotations.item')
+            ->select('items.id', 'items.name', 'items.specs', 'quotations.vendor')
+            ->where('quotations.vendor', '=', $vendor_id)
+            ->get();
+        
+        
+        return view('procurement.documents.bapp.form', [
+            'proc_id' => $proc_id,
+            'vendor_id' => $vendor_id,
+            'date' => $date,
+            'items' => $items,
+            'procurement' => $procurement,
+        ]);
+    }
+
+    private function integerToRoman($integer)
+    {
+        // Convert the integer into an integer (just to make sure)
+        $integer = intval($integer);
+        $result = '';
+    
+        // Create a lookup array that contains all of the Roman numerals.
+        $lookup = array('M' => 1000,
+        'CM' => 900,
+        'D' => 500,
+        'CD' => 400,
+        'C' => 100,
+        'XC' => 90,
+        'L' => 50,
+        'XL' => 40,
+        'X' => 10,
+        'IX' => 9,
+        'V' => 5,
+        'IV' => 4,
+        'I' => 1);
+    
+        foreach($lookup as $roman => $value){
+        // Determine the number of matches
+        $matches = intval($integer/$value);
+    
+        // Add the same number of characters to the string
+        $result .= str_repeat($roman,$matches);
+    
+        // Set the integer to be the remainder of the integer and the value
+        $integer = $integer % $value;
+        }
+    
+        // The Roman numeral should be built, return it
+        return $result;
+    }  
 }

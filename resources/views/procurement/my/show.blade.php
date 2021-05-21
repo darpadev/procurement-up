@@ -120,7 +120,7 @@
                         <div class="row justify-content-center">
                             <button class="btn btn-primary" name="assign">Kirim ke Staf</button>
                         </div>
-                    @elseif (($role == 'Wakil Rektor' And $unit[0]->name == 'Wakil Rektor 2') Or ($role == 'Direktur' And $origin == 'Fungsi Pengelola Fasilitas Universitas'))
+                    @elseif (($role == 'Wakil Rektor' And $unit[0]->name == 'Bidang Keuangan dan Sumber Daya Organisasi Universitas Pertamina') Or ($role == 'Direktur' And $origin == 'Fungsi Pengelola Fasilitas Universitas'))
                         <button class="btn btn-primary" name="approve">Disposisi</button>
                     @else
                         <button class="btn btn-primary" name="approve">Approve</button>
@@ -308,7 +308,11 @@
                                                                 Generate SPPH
                                                             </a>
                                                         @elseif ($quotation->name And !$quotation->winner)
-                                                            <a href="" class="badge badge-success mb-2 p-2">Pemenang Tender</a>
+                                                            <a href="{{ Route('generate-bapp-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" 
+                                                                target="_blank"
+                                                                class="badge badge-success mb-2 p-2">
+                                                                Pemenang Tender
+                                                            </a>
                                                         @elseif ($quotation->name And $quotation->winner)
                                                             <a href="" class="badge badge-warning text-dark mb-2 p-2">Buat PO</a>
                                                         @endif                                                        
