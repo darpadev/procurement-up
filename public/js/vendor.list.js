@@ -1,23 +1,51 @@
 $(document).ready(function(){
-    vendor_header = $('a.vendor-link')
-    vendor_detail = $('div.vendor-detail')
+    more_info_btn = $('.more-info-btn')
+    more_info = $('.more-info')
 
-    $(vendor_header).each(index => {
-        $(vendor_header[index]).click(function(event){
-            $(vendor_detail[index]).slideToggle()
+    $(more_info_btn).each(index => {
+        $(more_info_btn[index]).on('click', function(event){
+            if ( $(more_info_btn).hasClass('text-danger') ){
+                $(more_info_btn).removeClass('text-danger')
+            }else{
+                $(more_info_btn).addClass('text-danger')
+            }
+
+            $(more_info[index]).slideToggle()
+
             event.preventDefault()
         })
     })
-    
-    sub_content = $('.sub-content')
-    sub_name = $('.sub-name')
 
-    $(sub_name).each(index => {
-        $(sub_name[index]).click(function(event){
-            $(sub_content[index]).find($('div.vendor-container')).slideToggle(() => {
-                $(sub_content[index]).find($('div.vendor-detail')).slideUp()
-            })
-            event.preventDefault()
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
+
+    add_category = $('.add-category')
+    add_sub_category = $('.add-sub-category')
+
+    $(add_category).each(index => {
+        $(add_category[index]).on('change', function(){
+            $(add_sub_category[index]).html('<option value="">Mengambil data . . .</option>')
+            $(add_sub_category[index]).prop('disabled', true)
+
+            $.ajax({
+                method: "POST",
+                url: "/get-sub-category",
+                data: {
+                    category: $(add_category[index]).val()
+                },
+                success: function(response){
+                    option = `<option value="">Pilih Sub Kategori</option>`
+                    for (let i = 0; i < response.length; i++) {
+                        option += `<option value="${response[i]['id']}">${response[i]['name']}</option>`
+                    }
+
+                    $(add_sub_category[index]).html(option)
+                    $(add_sub_category[index]).prop('disabled', false)
+                }
+            });
         })
     })
 })

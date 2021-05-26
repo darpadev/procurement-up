@@ -131,210 +131,134 @@
     </div>
 
     <nav class="nav nav-pills nav-justified mb-2">
-        <a id="unitLists_btn" class="nav-link active" href="#">Daftar barang yang diajukan</a>
-        <a id="logs_btn" class="nav-link" href="#">Logs</a>
+        <a id="item-tab" class="tab-active nav-link active" href="#">Daftar barang yang diajukan</a>
+        <a id="bidder-tab" class="nav-link" href="#">Bidder List</a>
+        <a id="log-tab" class="nav-link" href="#">Logs</a>
     </nav>
 
     {{-- Unit List --}}
-    <div id="unitLists" class="card shadow p-4 mb-4">
-        @php $total = 0 @endphp
+    <div id="item-content" class="content-active card shadow p-4 mb-4">
+        <table class="table table-hover table-bordered text-center">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Nama Barang</th>
+                    <th style="width: 20%;">Harga Satuan (oe)</th>
+                    <th style="white-space: nowrap; width: 1%;">Jumlah</th>
+                    <th style="width: 20%;">Total Harga</th>
+                    <th style="white-space: nowrap; width: 1%;">#</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php $total = 0 @endphp
+                @foreach ($items as $item)
+                    @php $total += $item->oe * $item->qty @endphp
+                    <tr>
+                        <th style="white-space: nowrap; width: 1%;">{{ str_pad($loop->iteration, strlen(count($items)), 0, STR_PAD_LEFT) }}</th>
+                        <td class="text-left">
+                            <p class="mb-2">{{ $item->name }}</p>
+                            <div class="more-info" style="display: none;">
+                                <p>Spesifikasi: <br>{{ $item->specs }}</p>
+                                <div class="row">
+                                    <div class="col">
+                                        <p class="font-weight-bold">Harga Penawaran:</p>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Rp</span>
+                                            <span>{{ number_format($item->quotation_price, 2, ',', '.') }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <p class="font-weight-bold">Harga Final:</p>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Rp</span>
+                                            <span>{{ number_format($item->nego_price, 2, ',', '.') }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex justify-content-between">
+                                <span>Rp</span>
+                                <span>{{ number_format($item->oe, 2, ',', '.') }}</span>
+                            </div>
+                        </td>
+                        <td class="text-center">{{ $item->qty }}</td>
+                        <td>
+                            <div class="d-flex justify-content-between">
+                                <span>Rp</span>
+                                <span>{{ number_format($item->qty * $item->oe, 2, ',', '.') }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <a href="" class="more-info-btn"><i class="fas fa-fw fa-caret-square-down"></i></a>
+                        </td>
+                    </tr>
+                @endforeach
+                    <tr>
+                        <td colspan="2" class="text-right font-weight-bold">Total (OE)</td>
+                        <td colspan="3" class="font-weight-bold">
+                            <div class="d-flex justify-content-between">
+                                <span>Rp</span>
+                                <span>{{ number_format($total, 2, ',', '.') }}</span>
+                            </div>
+                        </td>
+                    </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="bidder-content" class="card shadow p-4 mb-4" style="display: none;">
         @foreach ($items as $item)
-            @php
-                $total += ($item->oe * $item->qty)
-            @endphp
-            <div class="row">
-                <div class="col-md-auto"><h5 class="font-weight-bold">{{ str_pad($loop->iteration, strlen(count($items)), 0, STR_PAD_LEFT) }}</h5></div>
-                <div class="col">
-                    {{-- Item information --}}
-                    <div class="row">
-                        <div class="col">
-                            <h5 class="font-weight-bold">{{ $item->name }}</h5>
-                            <div class="unit-content" style="display: none;">
-                                <h6 class="badge badge-pill <?= $item->category ? 'badge-primary' : 'badge-danger' ?>">
-                                    @if ($item->category)
-                                        {{ $item->category }}
-                                    @else
-                                        Kategori belum ditentukan
-                                    @endif
-                                </h6>
-                                <h6>Spesifikasi:</h6>
-                                <p>{{ $item->specs }}</p>
-                                <div class="d-flex justify-content-center table-responsive">
-                                    <table class="table w-75">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-center">Harga Satuan (OE)</th>
-                                                <th class="text-center" style="white-space: nowrap; width: 1%;">Jumlah</th>
-                                                <th class="text-center">Total Harga</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>
-                                                    <div class="d-flex justify-content-between">
-                                                        <span>Rp</span>
-                                                        <span>{{ number_format($item->oe, 2, ',', '.') }}</span>
-                                                    </div>
-                                                </td>
-                                                <td class="text-center">{{ $item->qty }}</td>
-                                                <td>
-                                                    <div class="d-flex justify-content-between">
-                                                        <span>Rp</span>
-                                                        <span>{{ number_format($item->qty * $item->oe, 2, ',', '.') }}</span>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <table>
-                                    <tr>
-                                        <th>Harga Penawaran</th>
-                                        <th>:</th>
-                                        <td>
-                                            <div class="d-flex justify-content-between">
-                                                <span>Rp</span>
-                                                <span>{{ number_format($item->quotation_price, 2, ',', '.') }}</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th>Harga Negosiasi</th>
-                                        <th>:</th>
-                                        <td>
-                                            <div class="d-flex justify-content-between">
-                                                <span>Rp</span>
-                                                <span>{{ number_format($item->nego_price, 2, ',', '.') }}</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="col-md-auto">
-                            <a href="#" class="btn btn-sm btn-info quotation-btn">Quotation Available: 
-                                @php
-                                    $count = \App\Models\Quotation::where('item', '=', $item->id)->where('doc', '<>', NULL)->count();
-                                @endphp
-                                <span class="badge badge-light"><?= $count ?></span>
-                            </a>
-                            <a href="#" class="btn btn-sm btn-primary expand-unit-btn">Expand</a>
-                            <span class="expanded-unit-btn" style="display: none;">
-                                <a href="#" class="btn btn-sm btn-primary">Review</a>
-                                <a href="#" class="btn btn-sm btn-danger close-unit-btn">&times;</a>
-                            </span>
-                        </div>   
-                    </div>
-                    {{-- Item Quotation --}}
-                    <div class="row quotation-content" style="display: none">
-                        <div class="col-12">
-                            <hr>
-                            <div class="row mb-2">
-                                <div class="col">
-                                    <h5 class="font-weight-bold">Daftar Vendor</h5>
-                                </div>
-                                <div class="col-md-auto">
-                                    <a href="#" class="btn btn-sm btn-danger close-quotation-btn">&times;</a>
-                                </div>                                
-                            </div>
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th class="text-center" style="width: 1%; white-space: nowrap;">#</th>
-                                            <th class="text-center">Vendor Name</th>
-                                            <th class="text-center">Quotation</th>
-                                            <th class="text-center">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($quotations as $quotation)
-                                            @if ($quotation->item == $item->id)
-                                                <tr>
-                                                    <td class="text-right">{{ $loop->iteration }}</td>
-                                                    <td>{{ $quotation->vendor_name }}</td>
-                                                    <td class="text-center w-50">
-                                                        @if ($quotation->doc != NULL)
-                                                            <a href="{{ Route('view-document-vendor', ['id' => $quotation->id]) }}">{{ $quotation->name }}</a>
-                                                        @else
-                                                            @if (\App\Models\VendorDoc::where('procurement', '=', $quotation->procurement)->where('vendor', '=', $quotation->vendor)->where('item', '=', $quotation->item)->where('type', '=', 'spph')->doesntExist())
-                                                                <span class="badge badge-warning text-dark mb-3">SPPH belum diunggah</span>
-                                                                <br>
-                                                                <form action="/upload/spph" method="post" enctype="multipart/form-data">
-                                                                    @csrf
-                                                                    <input type="hidden" name="procurement_stats" value="{{ $procurement->status_name }}">
-                                                                    <input type="hidden" name="id" value="{{ $quotation->id }}">
-                                                                    <input type="hidden" name="procurement" value="{{ $quotation->procurement }}">
-                                                                    <input type="hidden" name="vendor" value="{{ $quotation->vendor }}">
-                                                                    <input type="hidden" name="item" value="{{ $quotation->item }}">
-                                                                    <div class="form-group row">
-                                                                        <div class="col-md-auto">
-                                                                            <label for="spph_file">SPPH:</label>
-                                                                        </div>
-                                                                        <div class="col">
-                                                                            <input type="file" class="form-control-file" name="spph" accept="application/pdf">
-                                                                        </div>
-                                                                        <div class="col-md-auto">
-                                                                            <button class="btn btn-sm btn-primary" name="upload">Upload</button>
-                                                                        </div>
-                                                                    </div>
-                                                                </form>
-                                                            @else
-                                                                <span class="badge badge-primary mb-3">Unggah Quotation/Penawaran</span>
-                                                                <form action="/upload/quotation" method="post" enctype="multipart/form-data">
-                                                                    @csrf
-                                                                    <input type="hidden" name="id" value="{{ $quotation->id }}">
-                                                                    <input type="hidden" name="procurement" value="{{ $quotation->procurement }}">
-                                                                    <input type="hidden" name="vendor" value="{{ $quotation->vendor }}">
-                                                                    <input type="hidden" name="item" value="{{ $quotation->item }}">
-                                                                    <div class="form-group row">
-                                                                        <div class="col">                                                                            
-                                                                            <input class="form-control-file mb-2" type="file" name="quotation" accept="application/pdf">
-                                                                        </div>
-                                                                        <div class="col-md-auto">                                                                            
-                                                                            <button class="btn btn-sm btn-primary" name="upload">Upload</button>
-                                                                        </div>
-                                                                    </div>
-                                                                </form>
-                                                            @endif
-                                                        @endif
-                                                    </td>
-                                                    <td class="text-center" style="width: 1%; white-space: nowrap;">
-                                                        @if (!$quotation->name)
-                                                            <a 
-                                                                href="{{ Route('generate-spph-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" 
-                                                                target="_blank"
-                                                                class="badge badge-primary mb-2 p-2">
-                                                                Generate SPPH
-                                                            </a>
-                                                        @elseif ($quotation->name And !$quotation->winner)
-                                                            <a href="{{ Route('generate-bapp-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" 
-                                                                target="_blank"
-                                                                class="badge badge-success mb-2 p-2">
-                                                                Pemenang Tender
-                                                            </a>
-                                                        @elseif ($quotation->name And $quotation->winner)
-                                                            <a href="" class="badge badge-warning text-dark mb-2 p-2">Buat PO</a>
-                                                        @endif                                                        
-                                                    </td>
-                                                </tr>
-                                            @endif
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>             
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h3 class="font-weight-bold" style="font-size: 15pt;">{{ $item->name }}</h3>
+                <a href="" class="add-vendor-btn btn btn-sm btn-primary">New Vendor</a>
             </div>
-            @if (!$loop->last)
-                <hr>
-            @endif
+            <div class="add-vendor" style="display: none;">
+                <form action="{{ Route('update-procurement', ['id' => $procurement->id]) }}" method="post">
+                    @csrf
+                    <label for="vendor{{ $loop->iteration }}">Select Vendor:</label>
+                    <div class="form-group row align-items-center">                        
+                        <select name="vendor" id="vendor{{ $loop->iteration }}" class="form-control w-50 mr-3 ml-3" required>
+                            <option value="" selected>Pilih vendor yang akan ditambahkan</option>
+                            @foreach ($vendors as $vendor)
+                                <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
+                            @endforeach
+                        </select>
+                        <button name="add-vendor" class="btn btn-sm btn-primary mr-2">Add Vendor</button>
+                        <a href="" class="add-vendor-close btn btn-sm btn-danger">&times;</a>
+                    </div>
+                </form>
+            </div>
+            <table class="table table-hover table-bordered text-center">
+                <thead>
+                    <tr>
+                        <th style="white-space: nowrap; width: 1%;">#</th>
+                        <th>Nama Vendor</th>
+                        <th class="w-25">Berkas</th>
+                        <th class="w-25">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php $counter = 1 @endphp
+                    @foreach ($quotations as $quotation)
+                        @if ($quotation->item == $item->id)
+                            <tr>
+                                <th>{{ $counter }}</th>
+                                <th>{{ $quotation->vendor_name }}</th>
+                                <th>{{ $counter }}</th>
+                                <th>{{ $counter }}</th>
+                            </tr>
+                        @endif
+                        @php $counter += 1 @endphp
+                    @endforeach
+                </tbody>
+            </table>
         @endforeach
     </div>
 
     {{-- Logs --}}
-    <div id="logs" class="card shadow p-4 mb-4" style="display: none;">
+    <div id="log-content" class="card shadow p-4 mb-4" style="display: none;">
         <table>
             <tbody>                
                 @foreach ($log_dates as $index => $date)

@@ -58,6 +58,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/bidder-list/new', [BidderListController::class, 'create'])->name('new-vendor');
         // Form
         Route::post('/store-vendor', [BidderListController::class, 'store'])->name('store-vendor');
+        Route::post('/update-vendor/{id}', [BidderListController::class, 'update'])->name('update-vendor');
+        Route::get('/destroy/{vendor}/{category}/{sub_category}', [BidderListController::class, 'destroyVendorCategory'])->name('destroy-vendor-category');
+        // AJAX
+        Route::post('/get-sub-category', [BidderListController::class, 'getSubCategory']);
 });
 
 // AuthController

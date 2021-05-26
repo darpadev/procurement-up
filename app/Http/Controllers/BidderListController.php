@@ -13,30 +13,37 @@ class BidderListController extends Controller
      */
     public function index()
     {
-        $categories = \App\Models\ItemCategory::join('vendor_categories', 'vendor_categories.category', '=', 'item_categories.id')
-            ->select('id', 'name')->distinct()->orderBy('name')->get();
-        $sub_categories = \App\Models\ItemSubCategory::join('vendor_categories', 'vendor_categories.sub_category', '=', 'item_sub_categories.id')
-            ->select('id', 'name', 'item_sub_categories.category')->distinct()->orderBy('name')->get();
         $vendors = \App\Models\Vendor::join('vendor_trecords', 'vendor_trecords.id', '=', 'vendors.track_record')
             ->join('vendor_categories', 'vendor_categories.vendor', '=', 'vendors.id')
             ->join('item_categories', 'item_categories.id', '=', 'vendor_categories.category')
             ->join('item_sub_categories', 'item_sub_categories.id', '=', 'vendor_categories.sub_category')
             ->select(
-                'vendors.id', 
-                'vendors.name',
-                'vendors.phone',
-                'vendors.email',
-                'vendors.bank_account',
-                'vendors.name_account',
-                'vendor_categories.category',
-                'vendor_categories.sub_category',
+                'vendors.*',
                 'vendor_trecords.name AS trecord'
                 )
+            ->distinct()
+            ->paginate(25);
+        $list_categories = \App\Models\ItemCategory::select('id', 'name')->orderBy('name')->get();
+        $vendors_unknown = \App\Models\Vendor::leftJoin('vendor_categories', 'vendor_categories.vendor', '=', 'vendors.id')
+            ->select('vendors.*')
+            ->whereNull('vendor_categories.vendor')
             ->get();
+        $vendor_categories = \App\Models\VendorCategory::join('item_categories', 'item_categories.id', '=', 'vendor_categories.category')
+            ->join('item_sub_categories', 'item_sub_categories.id', '=', 'vendor_categories.sub_category')
+            ->select(
+                'item_categories.id AS id_cat', 
+                'item_sub_categories.id AS id_sub', 
+                'item_categories.name AS category', 
+                'item_sub_categories.name AS sub_category', 
+                'vendor'
+            )
+            ->get();
+
         return view('vendor.list', [
-            'categories' => $categories,
-            'sub_categories' => $sub_categories,
+            'list_categories' => $list_categories,
             'vendors' => $vendors,
+            'vendors_unknown' => $vendors_unknown,
+            'vendor_categories' => $vendor_categories,
         ]);
     }
 
@@ -58,7 +65,24 @@ class BidderListController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $track_records = \App\Models\VendorTrecord::select('id')->where('name', '=', 'Good')->get()[0];
+
+        $vendor = new \App\Models\Vendor;
+
+        $vendor->reg_code = $request->reg_code;
+        $vendor->name = $request->name;
+        $vendor->address = $request->address;
+        $vendor->phone = $request->phone;
+        $vendor->email = $request->email;
+        $vendor->business_field = $request->business_field;
+        $vendor->bank_account = $request->bank_account;
+        $vendor->name_account = $request->name_account;
+        $vendor->tin = $request->tin;
+        $vendor->track_record = $track_records->id;
+
+        $vendor->save();
+
+        return Redirect(Route('bidder-list'));
     }
 
     /**
@@ -92,7 +116,17 @@ class BidderListController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        if (isset($_POST['submit-category'])){
+            $vendor = new \App\Models\VendorCategory;
+
+            $vendor->vendor = $id;
+            $vendor->category = $request->category;
+            $vendor->sub_category = $request->sub_category;
+
+            $vendor->save();
+        }
+
+        return Redirect(Route('bidder-list'));
     }
 
     /**
@@ -104,5 +138,20 @@ class BidderListController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function getSubCategory(Request $request){
+        $sub_categories = \App\Models\ItemSubCategory::select('id', 'name')->where('category', '=', $request->input('category'))->get();
+        
+        return $sub_categories;
+    }
+
+    public function destroyVendorCategory($vendor, $category, $sub_category){
+        \App\Models\VendorCategory::where('vendor', '=', $vendor)
+            ->where('category', '=', $category)
+            ->where('sub_category', '=', $sub_category)
+            ->delete();
+
+        return redirect()->back();
     }
 }

@@ -1,84 +1,71 @@
 $(document).ready(function(){
-    $('#unitLists_btn').on('click', function(event){
-        $('#logs_btn').removeClass('active')
-        $('#logs').fadeToggle(() => {
-            $('#unitLists').fadeToggle()
+    $('#item-tab').on('click', function(event){
+        $('.tab-active').removeClass('tab-active active')
+        $('#item-tab').addClass('tab-active active')
+        $('.content-active').fadeToggle(() => {
+            $('#item-content').fadeToggle()
+            $('.content-active').removeClass('content-active')
+            $('#item-content').addClass('content-active')
         })
-        
-        $('#unitLists_btn').addClass('active')
 
         event.preventDefault()
     })
 
-    $('#logs_btn').on('click', function(event){
-        $('#unitLists_btn').removeClass('active')
-        $('#unitLists').fadeToggle(() => {
-            $('#logs').fadeToggle()
+    $('#bidder-tab').on('click', function(event){
+        $('.tab-active').removeClass('tab-active active')
+        $('#bidder-tab').addClass('tab-active active')
+        $('.content-active').fadeToggle(() => {
+            $('#bidder-content').fadeToggle()
+            $('.content-active').removeClass('content-active')
+            $('#bidder-content').addClass('content-active')
         })
-
-        $('#logs_btn').addClass('active')
 
         event.preventDefault()
     })
 
-    expandBtn = $('.expand-unit-btn')
-    expandedBtn = $('.expanded-unit-btn')
-    closeBtn = $('.close-unit-btn')
-    unitContent = $('.unit-content')
+    $('#log-tab').on('click', function(event){
+        $('.tab-active').removeClass('tab-active active')
+        $('#log-tab').addClass('tab-active active')
+        $('.content-active').fadeToggle(() => {
+            $('#log-content').fadeToggle()
+            $('.content-active').removeClass('content-active')
+            $('#log-content').addClass('content-active')
+        })
 
-    $(expandBtn).each(index => {
-        $(expandBtn[index]).click(function(event){
-            $(this).fadeToggle(() => {
-                $(expandedBtn[index]).fadeToggle()
-            })
-            $(unitContent[index]).slideToggle()
+        event.preventDefault()
+    })
+
+    expand_unit = $('.more-info')
+    expand_unit_btn = $('.more-info-btn')
+
+    $(expand_unit_btn).each(index => {
+        $(expand_unit_btn[index]).on('click', function(event){
+            $(expand_unit[index]).slideToggle()
+            if($(expand_unit_btn[index]).hasClass('text-danger')){
+                $(expand_unit_btn[index]).removeClass('text-danger')
+            }else{
+                $(expand_unit_btn[index]).addClass('text-danger')
+            }
+            event.preventDefault()
+        })
+    })
+
+    add_vendor_btn = $('.add-vendor-btn')
+    add_vendor_close = $('.add-vendor-close')
+    add_vendor = $('.add-vendor')
+
+    $(add_vendor_btn).each(index => {
+        $(add_vendor_btn[index]).on('click', function(event){
+            $(add_vendor[index]).slideDown()
             
             event.preventDefault()
         })
     })
 
-    $(closeBtn).each(index => {
-        $(closeBtn[index]).click(function(event){
-            $(expandedBtn[index]).fadeToggle(() =>{
-                $(expandBtn[index]).fadeToggle()
-            })
-            $(unitContent[index]).slideToggle()
-
-            event.preventDefault()
-        })
-    })
-
-    quotationBtn = $('.quotation-btn')
-    quotationNum = []
-    closeQuotationBtn = $('.close-quotation-btn')
-    quotationContent = $('.quotation-content')
-
-    quotationBtn.each(index => {
-        quotationNum.push($(quotationBtn[index]).find($('span.badge')).text())
-
-        $(quotationBtn[index]).mouseenter(function(event){
-            $(this).html('Lihat Penawaran')
-            event.preventDefault()
-        })
-
-        $(quotationBtn[index]).mouseleave(function(event){
-            $(this).html(`Quotation Available: <span class="badge badge-light">${quotationNum[index]}</span>`)
-            event.preventDefault()
-        })
-
-        $(quotationBtn[index]).click(event => {
-            $(quotationContent[index]).slideToggle()
-            $(quotationBtn[index]).fadeToggle()
-            event.preventDefault()
-        })
-    })
-
-    console.log($(quotationNum))
-
-    closeQuotationBtn.each(index => {
-        $(closeQuotationBtn[index]).click(event => {
-            $(quotationContent[index]).slideToggle()
-            $(quotationBtn[index]).fadeToggle()
+    $(add_vendor_close).each(index => {
+        $(add_vendor_close[index]).on('click', function(event){
+            $(add_vendor[index]).slideUp()
+            
             event.preventDefault()
         })
     })

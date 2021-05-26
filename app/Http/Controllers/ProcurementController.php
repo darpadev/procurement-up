@@ -368,6 +368,7 @@ class ProcurementController extends Controller
         $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->get()[0]['name'];
         $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->get()[0]['name'];
         $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->get();
+        $vendors = \App\Models\Vendor::join('vendor_categories', 'vendor_categories.vendor', '=', 'vendors.id')->select('id', 'name', 'category', 'sub_category')->get();
         $quotations = \App\Models\Quotation::join('vendors', 'vendors.id', '=', 'quotations.vendor')
             ->select('quotations.*', 'vendors.name AS vendor_name')
             ->orderBy('vendors.name')
@@ -404,6 +405,7 @@ class ProcurementController extends Controller
         }
 
         return view('procurement.my.show', [
+            'vendors' => $vendors,
             'quotations' => $quotations,
             'procurement' => $procurement,
             'items' => $items,

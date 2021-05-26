@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class CreateVendorTrecordsTable extends Migration
 {
@@ -18,6 +19,11 @@ class CreateVendorTrecordsTable extends Migration
             $table->string('name');
             $table->timestamps();
         });
+
+        DB::table('vendor_trecords')->insert([
+            ['name' => 'Good', 'created_at' => date('Y-m-d H:i:s')],
+            ['name' => 'Blacklist', 'created_at' => date('Y-m-d H:i:s')]
+        ]);
     }
 
     /**
