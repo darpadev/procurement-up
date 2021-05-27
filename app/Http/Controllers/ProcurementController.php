@@ -368,7 +368,7 @@ class ProcurementController extends Controller
         $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->get()[0]['name'];
         $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->get()[0]['name'];
         $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->get();
-        $vendors = \App\Models\Vendor::join('vendor_categories', 'vendor_categories.vendor', '=', 'vendors.id')->select('id', 'name', 'category', 'sub_category')->get();
+        $vendors = \App\Models\Vendor::join('vendor_categories', 'vendor_categories.vendor', '=', 'vendors.id')->select('id', 'name', 'category', 'sub_category')->orderBy('name')->get();
         $quotations = \App\Models\Quotation::join('vendors', 'vendors.id', '=', 'quotations.vendor')
             ->select('quotations.*', 'vendors.name AS vendor_name')
             ->orderBy('vendors.name')
@@ -387,12 +387,16 @@ class ProcurementController extends Controller
             ->get();
         $log_dates = \App\Models\ProcLog::select('created_at')->distinct()->orderBy('id', 'DESC')->get();
         $documents = \App\Models\Document::where('procurement', '=', $procurement->id)->get();
-        $items = \App\Models\Item::where('procurement', '=', $procurement->id)->get();
+        $items = \App\Models\Item::leftJoin('item_categories', 'item_categories.id', '=', 'items.category')
+            ->leftJoin('item_sub_categories', 'item_sub_categories.id', '=', 'items.sub_category')
+            ->select('items.*')
+            ->where('procurement', '=', $procurement->id)->get();
         $pic = \App\Models\User::select('name')->where('id', '=', $procurement->pic)->get();
         $category = \App\Models\ProcCategory::select('name')->where('id', '=', $procurement->category)->get();
         $priority = \App\Models\Priority::select('name')->where('id', '=', $procurement->priority)->get();
         $tor = array('available' => false, 'index' => 0);
         $spec = array('available' => false, 'index' => 0);
+        $item_categories = \App\Models\ItemCategory::select('id', 'name')->orderBy('name')->get();
 
         foreach ($documents as $index => $doc){
             if ($doc->type == 'ToR'){
@@ -405,6 +409,7 @@ class ProcurementController extends Controller
         }
 
         return view('procurement.my.show', [
+            'item_categories' => $item_categories,
             'vendors' => $vendors,
             'quotations' => $quotations,
             'procurement' => $procurement,
@@ -698,5 +703,33 @@ class ProcurementController extends Controller
 
     public function downloadTemplate(){
         return redirect( Url('/resc/TOR_Unit-List_Template.xlsx') );
+    }
+
+    public function addItemCategory(Request $request, $id){
+        $item = \App\Models\Item::find($id);
+
+        $item->category = $request->category;
+        $item->sub_category = $request->sub_category;
+
+        $item->save();
+
+        return redirect()->back();
+    }
+
+    public function addItemVendor(Request $request){
+        $quotation = new \App\Models\Quotation;
+
+        $quotation->procurement = $request->input('procurement_id');
+        $quotation->item = $request->input('item_id');
+        $quotation->vendor = $request->input('vendor');
+
+        $quotation->save();
+
+        $vendor = \App\Models\Quotation::join('vendors', 'vendors.id', '=', 'quotations.vendor')
+            ->select('quotations.*', 'vendors.name AS vendor_name')
+            ->where('quotations.vendor', '=', $request->input('vendor'))
+            ->get()[0];
+        
+        return $vendor;
     }
 }

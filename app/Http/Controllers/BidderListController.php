@@ -140,12 +140,6 @@ class BidderListController extends Controller
         //
     }
 
-    public function getSubCategory(Request $request){
-        $sub_categories = \App\Models\ItemSubCategory::select('id', 'name')->where('category', '=', $request->input('category'))->get();
-        
-        return $sub_categories;
-    }
-
     public function destroyVendorCategory($vendor, $category, $sub_category){
         \App\Models\VendorCategory::where('vendor', '=', $vendor)
             ->where('category', '=', $category)

@@ -4,10 +4,12 @@ $(document).ready(function(){
 
     $(more_info_btn).each(index => {
         $(more_info_btn[index]).on('click', function(event){
-            if ( $(more_info_btn).hasClass('text-danger') ){
-                $(more_info_btn).removeClass('text-danger')
+            if ( $(more_info_btn[index]).hasClass('badge badge-danger') ){
+                $(more_info_btn[index]).removeClass('badge badge-danger')
+                $(more_info_btn[index]).html(`<i class="fas fa-fw fa-caret-square-down"></i>`)
             }else{
-                $(more_info_btn).addClass('text-danger')
+                $(more_info_btn[index]).addClass('badge badge-danger')
+                $(more_info_btn[index]).html('&times;')
             }
 
             $(more_info[index]).slideToggle()

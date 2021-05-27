@@ -6,7 +6,7 @@
     <div class="container">
         {{-- Header --}}
         <div class="mb-4">
-            <a href="{{ url()->previous() }}" class="btn btn-danger mb-2">Back</a>
+            <a href="{{ Route('home') }}" class="btn btn-danger mb-2">Back</a>
             <h1 class="font-weight-bold">Bidder List</h1>
         </div>
 
@@ -21,7 +21,7 @@
                                 <tr>
                                     <th style="white-space: nowrap; width: 1%;">#</th>
                                     <th>Nama Vendor</th>
-                                    <th class="w-25">Action</th>
+                                    <th style="white-space: nowrap; width: 1%;">Action</th>
                                 </tr>
                             </thead>
                             <tbody>

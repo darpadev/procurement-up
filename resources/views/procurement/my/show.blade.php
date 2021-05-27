@@ -212,25 +212,49 @@
         @foreach ($items as $item)
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h3 class="font-weight-bold" style="font-size: 15pt;">{{ $item->name }}</h3>
-                <a href="" class="add-vendor-btn btn btn-sm btn-primary">New Vendor</a>
+                @if ($item->category)
+                    <a href="" class="add-vendor-btn btn btn-sm btn-primary">Daftarkan Vendor</a>
+                @else
+                    <form action="{{ Route('add-item-category', ['id' => $item->id]) }}" method="post">
+                        @csrf
+                        <div class="d-flex justify-content-around align-items-center">
+                            <select name="category" class="add-item-category form-control mx-2" required>
+                                <option value="">Pilih Kategori</option>
+                                @foreach ($item_categories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                            <select name="sub_category" class="add-item-sub-category form-control mx-2" required>
+                                <option value="">Pilih Sub Kategori</option>
+                            </select>
+                            <button class="btn btn-primary btn-sm">Submit</button>
+                        </div>
+                    </form>
+                @endif
             </div>
-            <div class="add-vendor" style="display: none;">
-                <form action="{{ Route('update-procurement', ['id' => $procurement->id]) }}" method="post">
-                    @csrf
-                    <label for="vendor{{ $loop->iteration }}">Select Vendor:</label>
-                    <div class="form-group row align-items-center">                        
-                        <select name="vendor" id="vendor{{ $loop->iteration }}" class="form-control w-50 mr-3 ml-3" required>
-                            <option value="" selected>Pilih vendor yang akan ditambahkan</option>
-                            @foreach ($vendors as $vendor)
-                                <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
-                            @endforeach
-                        </select>
-                        <button name="add-vendor" class="btn btn-sm btn-primary mr-2">Add Vendor</button>
-                        <a href="" class="add-vendor-close btn btn-sm btn-danger">&times;</a>
-                    </div>
-                </form>
-            </div>
-            <table class="table table-hover table-bordered text-center">
+            @if ($item->category)
+                <div class="add-vendor" style="display: none;">
+                    <form action="" class="add-vendor-form">
+                        <div class="d-flex justify-content-start align-items-center mb-3"> 
+                            <input type="hidden" name="procurement_id" value="{{ $procurement->id }}">
+                            <input type="hidden" name="item_id" value="{{ $item->id }}">
+                            <select name="vendor" id="vendor" class="form-control mr-3" style="width: 30%" required>
+                                <option value="" selected>Pilih vendor yang akan ditambahkan</option>
+                                @foreach ($vendors as $vendor)
+                                    @if ($vendor->category == $item->category And $vendor->sub_category == $item->sub_category)
+                                        <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                            <button name="add-vendor" class="btn btn-sm btn-primary mr-2">Add Vendor</button>
+                            <a href="" class="add-vendor-close btn btn-sm btn-danger">&times;</a>
+                        </div>
+                    </form>
+                </div>
+            @else
+                
+            @endif
+            <table class="{{ "quotation-$item->id" }} table table-hover table-bordered text-center">
                 <thead>
                     <tr>
                         <th style="white-space: nowrap; width: 1%;">#</th>
@@ -245,15 +269,16 @@
                         @if ($quotation->item == $item->id)
                             <tr>
                                 <th>{{ $counter }}</th>
-                                <th>{{ $quotation->vendor_name }}</th>
-                                <th>{{ $counter }}</th>
-                                <th>{{ $counter }}</th>
+                                <td>{{ $quotation->vendor_name }}</td>
+                                <td>{{ $counter }}</td>
+                                <td>{{ $counter }}</td>
                             </tr>
                         @endif
                         @php $counter += 1 @endphp
                     @endforeach
                 </tbody>
             </table>
+            <hr>
         @endforeach
     </div>
 

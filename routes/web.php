@@ -7,6 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\BidderListController;
 use App\Http\Controllers\ProcurementController;
+use App\Http\Controllers\CategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,8 +48,11 @@ Route::middleware(['auth'])->group(function () {
         // Form
         Route::post('/store-procurement', [ProcurementController::class, 'store'])->name('store-procurement');
         Route::post('/update-procurement/{id}', [ProcurementController::class, 'update'])->name('update-procurement');
+        Route::post('/item/add-category/{id}', [ProcurementController::class, 'addItemCategory'])->name('add-item-category');
         Route::post('/doc-upload', [ProcurementController::class, 'docUpload']);
         Route::get('/doc-destroy/{proc}/{id}', [ProcurementController::class, 'docDestroy'])->name('doc-destroy');
+        // AJAX
+        Route::post('/item/add-vendor', [ProcurementController::class, 'addItemVendor']);
         
     // UserController
     Route::get('/profile', [UserController::class, 'index'])->name('profile');
@@ -72,4 +76,5 @@ Route::get('/register', [AuthController::class, 'register'])->name('register');
     Route::post('/post-login', [AuthController::class, 'postLogin'])->name('post-login');
     Route::post('/store-account', [AuthController::class, 'storeAccount'])->name('store-account');
 
-
+// AJAX
+Route::post('/get-sub-category', [CategoryController::class, 'getSubCategory']);
