@@ -365,38 +365,39 @@ class ProcurementController extends Controller
      */
     public function show($id)
     {
-        $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->get()[0]['name'];
-        $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->get()[0]['name'];
-        $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->get();
-        $vendors = \App\Models\Vendor::join('vendor_categories', 'vendor_categories.vendor', '=', 'vendors.id')->select('id', 'name', 'category', 'sub_category')->orderBy('name')->get();
-        $quotations = \App\Models\Quotation::join('vendors', 'vendors.id', '=', 'quotations.vendor')
-            ->select('quotations.*', 'vendors.name AS vendor_name')
-            ->orderBy('vendors.name')
-            ->where('quotations.procurement', '=', $id)
+        $log_dates = \App\Models\ProcLog::select('created_at')->distinct()->orderBy('id', 'DESC')->get();
+        $logs = \App\Models\ProcLog::join('users', 'users.id', '=', 'proc_logs.sender')
+            ->select('users.name', 'message', 'proc_logs.created_at')
+            ->where('procurement', '=', $id)
+            ->orderBy('proc_logs.id', 'DESC')
             ->get();
+        $item_categories = \App\Models\ItemCategory::select('id', 'name')->orderBy('name')->get();
+        $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->get()[0]['name'];
         $procurement = \App\Models\Procurement::leftJoin('proc_mechanisms', 'proc_mechanisms.id', '=', 'procurements.mechanism')
             ->leftJoin('statuses', 'statuses.id', '=', 'procurements.status')
             ->leftJoin('proc_categories', 'proc_categories.id', '=', 'procurements.category')
             ->select('procurements.*', 'proc_mechanisms.name AS mech_name', 'statuses.name AS status_name', 'proc_categories.name AS category_name')
             ->where('procurements.id', '=', $id)
             ->get()[0];      
-        $logs = \App\Models\ProcLog::join('users', 'users.id', '=', 'proc_logs.sender')
-            ->select('users.name', 'message', 'proc_logs.created_at')
-            ->where('procurement', '=', $id)
-            ->orderBy('proc_logs.id', 'DESC')
+        $quotations = \App\Models\Quotation::join('vendors', 'vendors.id', '=', 'quotations.vendor')
+            ->select('quotations.*', 'vendors.name AS vendor_name')
+            ->orderBy('vendors.name')
+            ->where('quotations.procurement', '=', $id)
             ->get();
-        $log_dates = \App\Models\ProcLog::select('created_at')->distinct()->orderBy('id', 'DESC')->get();
+        $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->get()[0]['name'];
+        $spec = array('available' => false, 'index' => 0);
+        $tor = array('available' => false, 'index' => 0);
+        $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->get();
+        $vendor_docs = \App\Models\VendorDoc::where('procurement', '=', $id)->get();
+        $vendors = \App\Models\Vendor::join('vendor_categories', 'vendor_categories.vendor', '=', 'vendors.id')->select('id', 'name', 'category', 'sub_category')->orderBy('name')->get();
+        $category = \App\Models\ProcCategory::select('name')->where('id', '=', $procurement->category)->get();
         $documents = \App\Models\Document::where('procurement', '=', $procurement->id)->get();
         $items = \App\Models\Item::leftJoin('item_categories', 'item_categories.id', '=', 'items.category')
             ->leftJoin('item_sub_categories', 'item_sub_categories.id', '=', 'items.sub_category')
             ->select('items.*')
             ->where('procurement', '=', $procurement->id)->get();
         $pic = \App\Models\User::select('name')->where('id', '=', $procurement->pic)->get();
-        $category = \App\Models\ProcCategory::select('name')->where('id', '=', $procurement->category)->get();
         $priority = \App\Models\Priority::select('name')->where('id', '=', $procurement->priority)->get();
-        $tor = array('available' => false, 'index' => 0);
-        $spec = array('available' => false, 'index' => 0);
-        $item_categories = \App\Models\ItemCategory::select('id', 'name')->orderBy('name')->get();
 
         foreach ($documents as $index => $doc){
             if ($doc->type == 'ToR'){
@@ -409,22 +410,23 @@ class ProcurementController extends Controller
         }
 
         return view('procurement.my.show', [
-            'item_categories' => $item_categories,
-            'vendors' => $vendors,
-            'quotations' => $quotations,
-            'procurement' => $procurement,
-            'items' => $items,
+            'category' => $category,
             'documents' => $documents,
             'log_dates' => $log_dates,
-            'category' => $category,
-            'priority' => $priority,
             'logs' => $logs,
-            'spec' => $spec,
-            'pic' => $pic,
-            'tor' => $tor,
-            'role' => $role,
+            'item_categories' => $item_categories,
+            'items' => $items,
             'origin' => $origin,
+            'pic' => $pic,
+            'priority' => $priority,
+            'procurement' => $procurement,
+            'quotations' => $quotations,
+            'role' => $role,
+            'spec' => $spec,
+            'tor' => $tor,
             'unit' => $unit,
+            'vendor_docs' => $vendor_docs,
+            'vendors' => $vendors,
         ]);
     }
 

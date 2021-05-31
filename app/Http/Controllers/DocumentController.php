@@ -8,27 +8,27 @@ use PDO;
 
 class DocumentController extends Controller
 {
-    public function upload(Request $request, $doc_name){
+    public function upload(Request $request, $name){
         $pdo = DB::getPdo();
 
-        $file = $_FILES[$doc_name];
+        $file = $_FILES[$name];
 
         $id = $request->id;
         $procurement = $request->procurement;
         $vendor = $request->vendor;
         $item = $request->item;
 
-        $name = $file['name'];
+        $ref = strtoupper($request->spph_ref);
         $doc_type = $file['type'];
         $doc = file_get_contents($file['tmp_name']);
         $date = date('Y-m-d H:i:s');
-        $type = $doc_name;
+        $type = $name;
         
-        if($doc_name == 'quotation'){
+        if($name == 'quotation'){
             $stmt = $pdo->prepare("UPDATE quotations 
                                     SET name=?, type=?, doc_type=?, doc=?, updated_at=? 
                                     WHERE id=? AND procurement=? AND vendor=? AND item=?");
-            $stmt->bindParam(1, $name);
+            $stmt->bindParam(1, $ref);
             $stmt->bindParam(2, $type);
             $stmt->bindParam(3, $doc_type);
             $stmt->bindParam(4, $doc);
@@ -39,7 +39,7 @@ class DocumentController extends Controller
             $stmt->bindParam(9, $item);
 
             $stmt->execute();
-        }elseif ($doc_name == 'spph'){
+        }elseif ($name == 'spph'){
             if (\App\Models\VendorDoc::where('procurement', '=', $procurement)->where('type', '=', 'spph')->doesntExist()){
                 $new_status = \App\Models\Status::select('id')->where('name', '=', 'SPPH')->get()[0];
                 \App\Models\Procurement::where('id', '=', $request->procurement)
@@ -53,7 +53,7 @@ class DocumentController extends Controller
             $stmt->bindParam(1, $procurement);
             $stmt->bindParam(2, $vendor);
             $stmt->bindParam(3, $item);
-            $stmt->bindParam(4, $name);
+            $stmt->bindParam(4, $ref);
             $stmt->bindParam(5, $type);
             $stmt->bindParam(6, $doc_type);
             $stmt->bindParam(7, $doc);
@@ -66,10 +66,10 @@ class DocumentController extends Controller
         return (redirect(url()->previous()));
     }
 
-    public function view($id){
+    public function view($id, $table){
         $pdo = DB::getPdo();
 
-        $row = $pdo->prepare("SELECT * FROM quotations WHERE id = ?");
+        $row = $pdo->prepare("SELECT * FROM $table WHERE id = ?");
         $row->bindParam(1, $id);
 
         $row->execute();
@@ -158,7 +158,7 @@ class DocumentController extends Controller
                 <tr>
                     <td>Nomor</td>
                     <td>:</td>
-                    <td>" . $request->ref . $request->date . "</td>
+                    <td>" . strtoupper($request->ref) . "</td>
                 </tr>
                 <tr>
                     <td>Lampiran</td>
@@ -428,7 +428,6 @@ class DocumentController extends Controller
             <u style='$font_bold font-size: 12pt;'>BERITA ACARA PENUNJUKKAN PEMENANG</u>
             <br>
             $request->ref
-            $request->date
             </p>"
         );
         
@@ -482,7 +481,6 @@ class DocumentController extends Controller
     }
 
     public function generateSpphForm($proc_id, $vendor_id){
-        $date = '/UND/' . $this->integerToRoman(date('n')) . date('/Y');
         $vendor = \App\Models\Vendor::select('name')->where('id', '=', $vendor_id)->get()[0];
         $procurement = \App\Models\Procurement::select('ref', 'name')->where('id', '=', $proc_id)->get()[0];
         $items = \App\Models\Quotation::join('items', 'items.id', '=', 'quotations.item')
@@ -493,7 +491,6 @@ class DocumentController extends Controller
         return view('procurement.documents.spph.form', [
             'proc_id' => $proc_id,
             'vendor_id' => $vendor_id,
-            'date' => $date,
             'vendor' => $vendor,
             'procurement' => $procurement,
             'items' => $items,
@@ -501,7 +498,6 @@ class DocumentController extends Controller
     }
 
     public function generateBappForm($proc_id, $vendor_id){
-        $date = '/BA/' . $this->integerToRoman(date('n')) . date('/Y');
         $procurement = \App\Models\Procurement::select('ref', 'name')->where('id', '=', $proc_id)->get()[0];
         $items = \App\Models\Quotation::join('items', 'items.id', '=', 'quotations.item')
             ->select('items.id', 'items.name', 'items.specs', 'quotations.vendor')
@@ -512,45 +508,8 @@ class DocumentController extends Controller
         return view('procurement.documents.bapp.form', [
             'proc_id' => $proc_id,
             'vendor_id' => $vendor_id,
-            'date' => $date,
             'items' => $items,
             'procurement' => $procurement,
         ]);
-    }
-
-    private function integerToRoman($integer)
-    {
-        // Convert the integer into an integer (just to make sure)
-        $integer = intval($integer);
-        $result = '';
-    
-        // Create a lookup array that contains all of the Roman numerals.
-        $lookup = array('M' => 1000,
-        'CM' => 900,
-        'D' => 500,
-        'CD' => 400,
-        'C' => 100,
-        'XC' => 90,
-        'L' => 50,
-        'XL' => 40,
-        'X' => 10,
-        'IX' => 9,
-        'V' => 5,
-        'IV' => 4,
-        'I' => 1);
-    
-        foreach($lookup as $roman => $value){
-        // Determine the number of matches
-        $matches = intval($integer/$value);
-    
-        // Add the same number of characters to the string
-        $result .= str_repeat($roman,$matches);
-    
-        // Set the integer to be the remainder of the integer and the value
-        $integer = $integer % $value;
-        }
-    
-        // The Roman numeral should be built, return it
-        return $result;
-    }  
+    } 
 }

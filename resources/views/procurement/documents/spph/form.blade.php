@@ -12,14 +12,7 @@
                 <div class="row g-3">
                     <div class="col-md-6 mb-3">
                         <label for="ref" class="form-label font-weight-bold">Nomor Surat<span class="badge badge-pill badge-danger ml-2">wajib</span></label>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <input type="text" class="form-control" id="ref" name="ref" placeholder="0000/XX-XX.X.X.X" required>
-                            </div>
-                            <div class="col-md-6">
-                                <input type="text" class="form-control-plaintext" id="date" name="date" value="{{ $date }}" required>
-                            </div>
-                        </div>
+                        <input type="text" class="form-control" id="ref" name="ref" required>                        
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="receiver" class="form-label font-weight-bold">Ditujukan kepada<span class="badge badge-pill badge-danger ml-2">wajib</span></label>

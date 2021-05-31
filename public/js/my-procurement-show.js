@@ -135,4 +135,15 @@ $(document).ready(function(){
 
         event.preventDefault()
     })
+
+    let upload_spph = $('.upload-spph')
+    let spph_form = $('.spph-form')
+
+    $(upload_spph).each(index => {
+        $(upload_spph[index]).on('click', function(event){
+            $(spph_form[index]).slideToggle()
+
+            event.preventDefault()
+        })
+    })
 })

@@ -25,19 +25,6 @@ Route::middleware(['auth'])->group(function () {
     // HomeController
     Route::get('/', [HomeController::class, 'index'])->name('home');
 
-    // DocumentController
-        // Request Form
-        Route::get('/generate-spph/form/{proc_id}/{vendor_id}', [DocumentController::class, 'generateSpphForm'])->name('generate-spph-form');
-        Route::get('/generate-bapp/form/{proc_id}/{vendor_id}', [DocumentController::class, 'generateBappForm'])->name('generate-bapp-form');
-
-        // Upload Document
-        Route::post('/upload/{name}', [DocumentController::class, 'upload'])->name('upload');
-
-        // Export Document 
-        Route::post('/generate-spph', [DocumentController::class, 'generateSpph'])->name('generate-spph');
-        Route::post('/generate-bapp', [DocumentController::class, 'generateBapp'])->name('generate-bapp');
-        Route::get('/view/{id}', [DocumentController::class, 'view'])->name('view-document-vendor');
-
     // ProcurementController
     Route::get('/new-procurement', [ProcurementController::class, 'create'])->name('new-procurement');
     Route::get('/my-procurement', [ProcurementController::class, 'index'])->name('my-procurement');
@@ -67,6 +54,19 @@ Route::middleware(['auth'])->group(function () {
         // AJAX
         Route::post('/get-sub-category', [BidderListController::class, 'getSubCategory']);
 });
+
+// DocumentController
+    // Request Form
+    Route::get('/generate-spph/form/{proc_id}/{vendor_id}', [DocumentController::class, 'generateSpphForm'])->name('generate-spph-form');
+    Route::get('/generate-bapp/form/{proc_id}/{vendor_id}', [DocumentController::class, 'generateBappForm'])->name('generate-bapp-form');
+
+    // Upload Document
+    Route::post('/upload/{name}', [DocumentController::class, 'upload'])->name('upload');
+
+    // Export Document 
+    Route::post('/generate-spph', [DocumentController::class, 'generateSpph'])->name('generate-spph');
+    Route::post('/generate-bapp', [DocumentController::class, 'generateBapp'])->name('generate-bapp');
+    Route::get('/view/{id}/{table}', [DocumentController::class, 'view'])->name('view-document-vendor');
 
 // AuthController
 Route::get('/login', [AuthController::class, 'index'])->name('login');

@@ -17,18 +17,18 @@
     <div class="card shadow p-4 mb-4">                
         <div class="row g-3">
             <div class="col-md-6 mb-3">
-                <label for="ref" class="form-label font-weight-bold">Prioritas</label>
+                <label for="priority" class="form-label font-weight-bold">Prioritas</label>
                 @if ($procurement->priority)
-                    <input type="text" class="form-control-plaintext" id="ref" name="ref" placeholder="000/---/MEMO/---/yyyy" value="{{ $priority[0]->name }}" required>
+                    <input type="text" class="form-control-plaintext" id="priority" name="priority" value="{{ $priority[0]->name }}" required>
                 @else
                     <br>
                     <p class="p-2 badge badge-pill badge-danger">Not Available</p>
                 @endif
             </div>
             <div class="col-md-6 mb-3">
-                <label for="ref" class="form-label font-weight-bold">PIC Pengadaan</label>
+                <label for="pic" class="form-label font-weight-bold">PIC Pengadaan</label>
                 @if ($procurement->pic)
-                    <input type="text" class="form-control-plaintext" id="ref" name="ref" placeholder="000/---/MEMO/---/yyyy" value="{{ $pic[0]->name }}" required>
+                    <input type="text" class="form-control-plaintext" id="pic" name="pic" value="{{ $pic[0]->name }}" required>
                 @else
                     <br>
                     <p class="p-2 badge badge-pill badge-danger">Not Available</p>
@@ -208,6 +208,7 @@
         </table>
     </div>
 
+    {{-- Bidder List --}}
     <div id="bidder-content" class="card shadow p-4 mb-4" style="display: none;">
         @foreach ($items as $item)
             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -251,8 +252,6 @@
                         </div>
                     </form>
                 </div>
-            @else
-                
             @endif
             <table class="{{ "quotation-$item->id" }} table table-hover table-bordered text-center">
                 <thead>
@@ -260,7 +259,9 @@
                         <th style="white-space: nowrap; width: 1%;">#</th>
                         <th>Nama Vendor</th>
                         <th class="w-25">Berkas</th>
-                        <th class="w-25">Action</th>
+                        @if ($role == 'Staf')
+                            <th class="w-25">Action</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -270,8 +271,37 @@
                             <tr>
                                 <th>{{ $counter }}</th>
                                 <td>{{ $quotation->vendor_name }}</td>
-                                <td>{{ $counter }}</td>
-                                <td>{{ $counter }}</td>
+                                <td class="text-left">
+                                    @if (count($vendor_docs))
+                                        @foreach ($vendor_docs as $doc)
+                                            @if ($doc->type == 'spph')
+                                                SPPH: <br>
+                                                <a href="{{ Route('view-document-vendor', ['id' => $doc->id, 'table' => 'vendor_docs']) }}" target="_blank">{{ $doc->name . ".pdf"}}</a>
+                                            @endif
+                                        @endforeach
+                                    @else
+                                        Tidak ada berkas
+                                    @endif
+                                </td>
+                                @if ($role == 'Staf')
+                                    <td>
+                                        <div class="d-flex justify-content-around">
+                                            @if (!count($vendor_docs))
+                                                <a href="{{ Route('generate-spph-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" class="btn btn-sm btn-primary">Generate SPPH</a>
+                                                <a href="" class="upload-spph btn btn-sm btn-success">Upload SPPH</a>
+                                            @endif
+                                        </div>
+                                        <form action="{{ Route('upload', ['name' => 'spph']) }}" method="post" enctype="multipart/form-data" class="spph-form mt-2" style="display: none">
+                                            @csrf
+                                            <input type="hidden" name="procurement" value="{{ $procurement->id }}">
+                                            <input type="hidden" name="vendor" value="{{ $quotation->vendor }}">
+                                            <input type="hidden" name="item" value="{{ $item->id }}">
+                                            <input type="text" id="spph_ref" name="spph_ref" class="form-control mb-2" placeholder="Nomor Surat" required>
+                                            <input type="file" name="spph" id="spph" class="form-control-file mb-2" required>
+                                            <button class="btn btn-sm btn-primary">Upload</button>
+                                        </form>
+                                    </td>
+                                @endif
                             </tr>
                         @endif
                         @php $counter += 1 @endphp
