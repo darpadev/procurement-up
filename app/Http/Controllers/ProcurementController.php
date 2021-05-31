@@ -22,7 +22,7 @@ class ProcurementController extends Controller
         $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->get()[0]['name'];
         $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->get();
 
-        if (($role == 'Wakil Rektor' And (isset($unit[0]->name) And $unit[0]->name == 'Bidang Keuangan dan Sumber Daya Organisasi')) Or ($role == 'Direktur' And $origin == 'Fungsi Pengelola Fasilitas Universitas') Or (($role == 'Manajer' Or $role == 'Staf') And $unit[0]->name == 'Fungsi Pengadaan Barang dan Jasa')){
+        if (($role == 'Wakil Rektor' And (isset($unit[0]->name) And $unit[0]->name == 'Bidang Keuangan dan Sumber Daya Organisasi Universitas Pertamina')) Or ($role == 'Direktur' And $origin == 'Fungsi Pengelola Fasilitas Universitas') Or (($role == 'Manajer' Or $role == 'Staf') And $unit[0]->name == 'Fungsi Pengadaan Barang dan Jasa')){
             switch ($_GET['stats']) {
                 case 'all':
                     $procurements = \App\Models\Procurement::join('statuses', 'procurements.status', '=', 'statuses.id')
@@ -220,7 +220,7 @@ class ProcurementController extends Controller
      */
     public function create()
     {
-        $mechanisms = \App\Models\ProcMechanism::where('name', '=', 'Tender Terbuka')->get()[0];
+        $mechanisms = \App\Models\ProcMechanism::where('name', '=', 'Tender Terbuka')->first();
 
         return view('procurement.new', [
             'mechanisms' => $mechanisms,
@@ -235,38 +235,85 @@ class ProcurementController extends Controller
      */
     public function store(Request $request)
     {
-        $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->get()[0]['name'];
-        $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->get()[0]['name'];
-        $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->get();
+        $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->first()['name'];
+        $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->first()['name'];
+        $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->first();
+
+        /**
+         * Find ID with Role
+         * "Direktur"
+         */
+        $role_direktur = \App\Models\Role::select('id')
+                            ->where('name', '=', 'Direktur')
+                            ->first()['id'];
+
+        /**
+         * Find ID with Role
+         * "Wakil Rektor"
+         */
+        $role_wr = \App\Models\Role::select('id')
+                                        ->where('name', '=', 'Wakil Rektor')
+                                        ->first()['id'];
+
+        /**
+         * Find ID with Origin
+         * "Rektorat"
+         */
+        $origin_wr = \App\Models\Origin::select('id')
+                                            ->where('name', '=', 'Rektorat')
+                                            ->first()['id'];
+        
+        /**
+         * Find ID with Unit
+         * "Bidang Keuangan dan Sumber Daya Organisasi"
+         */
+        $unit_wr_2 = \App\Models\Unit::select('id')
+                                        ->where('name', '=', 'Bidang Keuangan dan Sumber Daya Organisasi Universitas Pertamina')
+                                        ->first()['id'];
 
         if(isset($_POST['submit'])){
             if ($role == 'Wakil Rektor'){
-                if($unit == 'Bidang Keuangan dan Sumber Daya Organisasi'){
-                    $approver = 3;
-                    $approver_origin = 2;
+                if($unit->name == 'Bidang Keuangan dan Sumber Daya Organisasi Universitas Pertamina'){
+                    /**
+                     * Find ID with Origin
+                     * "Fungsi Pengelola Fasilitas Universitas"
+                     */
+                    $direktur_pfu = \App\Models\Origin::select('id')
+                                        ->where('name', '=', 'Fungsi Pengelola Fasilitas Universitas')
+                                        ->first()['id'];
+
+                    $approver = $role_direktur;
+                    $approver_origin = $direktur_pfu;
                     $approver_unit = NULL;
                 }else{
-                    $approver = 2;
-                    $approver_origin = 1;
-                    $approver_unit = 2;
+                    $approver = $role_wr;
+                    $approver_origin = $origin_wr;
+                    $approver_unit = $unit_wr_2;
                 }
             }elseif ($role == 'Direktur' Or $role == 'Dekan'){
-                $approver = 2;
-                $approver_origin = 1;
-                $approver_unit = 2;
+                $approver = $role_wr;
+                $approver_origin = $origin_wr;
+                $approver_unit = $unit_wr_2;
             }elseif ($role == 'Kaprodi'){
-                $approver = 4;
+                /**
+                 * Find ID with Role
+                 * "Dekan"
+                 */
+                $role_dekan = \App\Models\Role::select('id')
+                                                    ->where('name', '=', 'Dekan')
+                                                    ->first()['id'];
+                $approver = $role_dekan;
                 $approver_origin = Auth::user()->origin;
                 $approver_unit = NULL;
             }elseif ($role == 'Manajer'){
                 if ($request->value <= 200000000){
-                    $approver = 3;
+                    $approver = $role_direktur;
                     $approver_origin = Auth::user()->origin;
                     $approver_unit = NULL;
                 }else{
-                    $approver = 2;
-                    $approver_origin = 1;
-                    $approver_unit = 2;
+                    $approver = $role_wr;
+                    $approver_origin = $origin_wr;
+                    $approver_unit = $unit_wr_2;
                 }
             }
             
@@ -287,28 +334,28 @@ class ProcurementController extends Controller
                 'updated_at' => date('Y-m-d H:i:s'),
             ]);
 
-            if(isset($approver_unit) And $approver_unit == 2){
-                \App\Models\ProcLog::insert([
-                    'procurement' => $proc_id, 
-                    'message' => "Menunggu persetujuan Wakil Rektor II", 
-                    'sender' => Auth::user()->id, 
-                    'created_at' => date('Y-m-d H:i:s'), 
-                    'updated_at' => date('Y-m-d H:i:s')
-                ]);                
+            $log = new \App\Models\ProcLog;
+
+            if(isset($approver_unit) And $approver_unit == $unit_wr_2){
+                // If approver == "Wakil Rektor 2"
+                $log->procurement   = $proc_id;
+                $log->message       = 'Menunggu persetujuan Wakil Rektor II';
+                $log->sender        = Auth::user()->id;
+
+                $log->save();               
             }else{
+                // If approver is not "Wakil Rektor II"
                 $approver = \App\Models\Procurement::join('origins', 'origins.id', '=', 'procurements.approver_origin')
                     ->join('roles', 'roles.id', '=', 'procurements.approver')
                     ->select('roles.name AS role', 'origins.name AS origin')
                     ->where('procurements.id', '=', $proc_id)
                     ->get()[0];
 
-                \App\Models\ProcLog::insert([
-                    'procurement' => $proc_id, 
-                    'message' => "Menunggu persetujuan $approver->role $approver->origin",                     
-                    'sender' => Auth::user()->id, 
-                    'created_at' => date('Y-m-d H:i:s'), 
-                    'updated_at' => date('Y-m-d H:i:s')
-                ]);
+                    $log->procurement   = $proc_id;
+                    $log->message       = "Menunggu persetujuan $approver->role $approver->origin";
+                    $log->sender        = Auth::user()->id;
+    
+                    $log->save();
             }
                 
             $pdo = DB::getPdo();
@@ -317,7 +364,7 @@ class ProcurementController extends Controller
             $doc_type = $_FILES['tor']['type'];
             $doc = file_get_contents($_FILES['tor']['tmp_name']);
             $date = date('Y-m-d H:i:s');
-            $type = "ToR";
+            $type = "tor";
     
             $stmt = $pdo->prepare("INSERT INTO documents VALUES(NULL, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->bindParam(1, $proc_id);
@@ -372,7 +419,7 @@ class ProcurementController extends Controller
             ->orderBy('proc_logs.id', 'DESC')
             ->get();
         $item_categories = \App\Models\ItemCategory::select('id', 'name')->orderBy('name')->get();
-        $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->get()[0]['name'];
+        $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->first()['name'];
         $procurement = \App\Models\Procurement::leftJoin('proc_mechanisms', 'proc_mechanisms.id', '=', 'procurements.mechanism')
             ->leftJoin('statuses', 'statuses.id', '=', 'procurements.status')
             ->leftJoin('proc_categories', 'proc_categories.id', '=', 'procurements.category')
@@ -384,10 +431,10 @@ class ProcurementController extends Controller
             ->orderBy('vendors.name')
             ->where('quotations.procurement', '=', $id)
             ->get();
-        $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->get()[0]['name'];
+        $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->first()['name'];
         $spec = array('available' => false, 'index' => 0);
         $tor = array('available' => false, 'index' => 0);
-        $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->get();
+        $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->first();
         $vendor_docs = \App\Models\VendorDoc::where('procurement', '=', $id)->get();
         $vendors = \App\Models\Vendor::join('vendor_categories', 'vendor_categories.vendor', '=', 'vendors.id')->select('id', 'name', 'category', 'sub_category')->orderBy('name')->get();
         $category = \App\Models\ProcCategory::select('name')->where('id', '=', $procurement->category)->get();
@@ -438,15 +485,15 @@ class ProcurementController extends Controller
      */
     public function edit($id)
     {
-        $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->get()[0]['name'];
-        $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->get()[0]['name'];
-        $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->get();
+        $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->first()['name'];
+        $origin = \App\Models\Origin::select('id', 'name')->where('id', '=', Auth::user()->origin)->first()['name'];
+        $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->first();
 
-        if ($role == 'Staf' And $origin == 'Fungsi Pengelola Fasilitas Universitas' And $unit[0]->name == 'Fungsi Pengadaan Barang dan Jasa'){            
-            $procurement = \App\Models\Procurement::select('id', 'name', 'pic', 'category', 'priority')->where('id', '=', $id)->get()[0];
+        if ($role == 'Staf' And $origin == 'Fungsi Pengelola Fasilitas Universitas' And $unit->name == 'Fungsi Pengadaan Barang dan Jasa'){            
+            $procurement = \App\Models\Procurement::select('id', 'name', 'pic', 'category', 'priority')->where('id', '=', $id)->first();
             $categories = \App\Models\ProcCategory::select('id', 'name')->get();
             $priorities = \App\Models\Priority::select('id', 'name')->get();
-            $pic = \App\Models\User::select('id', 'name')->where('origin', '=', 2)->where('unit', '=', 4)->get();
+            $pic = \App\Models\User::select('id', 'name')->where('origin', '=', $role->id)->where('unit', '=', 4)->get();
 
             return view('procurement.my.edit', [
                 'procurement' => $procurement,
@@ -455,7 +502,7 @@ class ProcurementController extends Controller
                 'pic' => $pic,
             ]);
         }else{
-            $procurement = \App\Models\Procurement::where('id', '=', $id)->get()[0];
+            $procurement = \App\Models\Procurement::where('id', '=', $id)->first();
             $documents = \App\Models\Document::where('procurement', '=', $procurement->id)->get();            
     
             $tor = array('available' => false, 'index' => 0);
@@ -493,22 +540,22 @@ class ProcurementController extends Controller
     public function update(Request $request, $id)
     {
         if (isset($_POST['update'])){
-            \App\Models\Procurement::where('id', '=', $id)
-                ->update([
-                    'ref' => $request->ref,
-                    'name' => $request->name,
-                    'value' => $request->value,
-                    'updated_at' => date('Y-m-d H:i:s'),
-                ]);
+            $procurement = \App\Models\Procurement::find($id);
+
+            $procurement->ref   = $request->ref;
+            $procurement->name  = $request->name;
+            $procurement->value = $request->value;
+
+            $procurement->save();
         
-            if(isset($_FILES['tor'])) {
+            if (!$_FILES['tor']['error']) {
                 $pdo = DB::getPdo();
 
                 $name = $_FILES['tor']['name'];
                 $doc_type = $_FILES['tor']['type'];
                 $doc = file_get_contents($_FILES['tor']['tmp_name']);
                 $date = date('Y-m-d H:i:s');
-                $type = "ToR";
+                $type = "tor";
         
                 $stmt = $pdo->prepare("INSERT INTO documents VALUES(NULL, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->bindParam(1, $id);
@@ -522,7 +569,7 @@ class ProcurementController extends Controller
                 $stmt->execute();          
             }
 
-            if (isset($_FILES['spec'])){
+            if (!$_FILES['spec']['error']){
                 $pdo = DB::getPdo();
 
                 $name = $_FILES['spec']['name'];
@@ -543,129 +590,195 @@ class ProcurementController extends Controller
                 $stmt->execute();
             }
 
-            \App\Models\ProcLog::insert([
-                'procurement' => $id,
-                'message' => 'Informasi pengadaan telah diperbaharui',
-                'sender' => Auth::user()->id,
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ]);
+            $log = new \App\Models\ProcLog;
+
+            $log->procurement   = $id;
+            $log->message       = 'Informasi pengadaan telah diperbaharui';
+            $log->sender        = Auth::user()->id;
+
+            $log->save();
+
         }elseif (isset($_POST['approve'])){
-            $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->get()[0]['name'];
-            $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->get()[0]['name'];
-            $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->get();
+            $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->first()['name'];
+            $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->first()['name'];
+
+            /**
+             * Find ID with Role
+             * "Direktur"
+             */
+            $role_direktur = \App\Models\Role::select('id')
+                                ->where('name', '=', 'Direktur')
+                                ->first()['id'];
+
+            /**
+             * Find ID with Origin 
+             * "Fungsi Pengelola Fasilitas Universitas"
+             */
+            $direktur_pfu = \App\Models\Origin::select('id')
+                                ->where('name', '=', 'Fungsi Pengelola Fasilitas Universitas')
+                                ->first()['id'];
+
+            /**
+             * Find ID with Role 
+             * "Wakil Rektor"
+             */
+            $role_wr = \App\Models\Role::select('id')
+                            ->where('name', '=', 'Wakil Rektor')
+                            ->first()['id'];
+            
+            /**
+             * Find ID with Origin 
+             * "Rektorat"
+             */
+            $origin_wr = \App\Models\Origin::select('id')
+                            ->where('name', '=', 'Rektorat')
+                            ->first()['id'];
+            
+            /**
+             * Find ID with Unit
+             * "Bidang Keuangan dan Sumber Daya Organisasi Universitas Pertamina" 
+             * (Wakil Rektor 2)
+             */
+            $unit_wr_2 = \App\Models\Unit::select('id')
+                        ->where('name', '=', 'Bidang Keuangan dan Sumber Daya Organisasi Universitas Pertamina')
+                        ->first()['id'];
+
+            /**
+             * Find ID with Role
+             * "Manajer"
+             */
+            $role_manajer = \App\Models\Role::select('id')
+                                ->where('name', '=', 'Manajer')
+                                ->first()['id'];
+
+            /**
+             * Find ID with Origin
+             * "Fungsi Pengelola Fasilitas Universitas"
+             */
+            $origin_pfu = \App\Models\Origin::select('id')
+                            ->where('name', '=', 'Fungsi Pengelola Fasilitas Universitas')
+                            ->first()['id'];
+
+            /**
+             * Find ID wiht Unit
+             * "Fungsi Pengadaan Barang dan Jasa"
+             */
+            $unit_pengadaan = \App\Models\Unit::select('id')
+                                ->where('name', '=', 'Fungsi Pengadaan Barang dan Jasa')
+                                ->first()['id'];
             
             if ($role == 'Wakil Rektor'){
-                $next_approver = 3;
-                $next_approver_origin = 2;
+                /** 
+                 * If current approver is "Wakil Rektor", 
+                 * then next approver should be "Direktur Fungsi Pengelola Fasilitas Universitas"
+                */
+                $next_approver = $role_direktur;
+                $next_approver_origin = $direktur_pfu;
                 $next_approver_unit = NULL;
             }elseif ($role == 'Dekan' Or ($role == 'Direktur' And $origin != 'Fungsi Pengelola Fasilitas Universitas')){
-                $next_approver = 2;
-                $next_approver_origin = 1;
-                $next_approver_unit = 2;
+                /**
+                 * If current approver is "Dekan" or "Direktur", 
+                 * then next approver should be "Wakil Rektor 2"
+                 */
+                $next_approver = $role_wr;
+                $next_approver_origin = $origin_wr;
+                $next_approver_unit = $unit_wr_2;
             }elseif ($role == 'Direktur' And $origin == 'Fungsi Pengelola Fasilitas Universitas'){
-                $next_approver = 6;
-                $next_approver_origin = 2;
-                $next_approver_unit = 4;
+                /**
+                 * If current approver is "Direktur Fungsi Pengelola Fasilitas Universitas", 
+                 * then next approver should be "Manajer Pengadaan Barang dan Jasa
+                 */
+                $next_approver = $role_manajer;
+                $next_approver_origin = $origin_pfu;
+                $next_approver_unit = $unit_pengadaan;
             }
 
-            \App\Models\Procurement::where('id', '=', $id)
-                ->update([
-                    'approver' => $next_approver,
-                    'approver_origin' => $next_approver_origin,
-                    'approver_unit' => $next_approver_unit,
-                    'approval_status' => "Disetujui"
-                ]);
-            
-            if($next_approver == 6 And $next_approver_unit == 4){
-                $message = 'Pengadaan sudah didisposisikan ke Manajer Fungsi Pengadaan Barang dan Jasa';
-            }else{
-                $message = 'Pengadaan disetujui';
+            $procurement = \App\Models\Procurement::find($id);
+
+            $procurement->approver          = $next_approver;
+            $procurement->approver_origin   = $next_approver_origin;
+            $procurement->approver_unit     = $next_approver_unit;
+            $procurement->editable          = false;
+
+            $procurement->save();
+
+            $log = new \App\Models\ProcLog;
+
+            $log->procurement   = $id;
+            $log->sender        = Auth::user()->id;
+
+            if ($next_approver_unit == $unit_wr_2){
+                $log->message   = 'Pengadaan disetujui. Menunggu persetujuan Wakil Rektor II';
+            }elseif ($next_approver == $role_direktur And $next_approver_origin == $direktur_pfu){
+                $log->message   = 'Pengadaan sudah didisposisikan ke Direktur Fungsi Pengelola Fasilitas Universitas';
+            }elseif ($next_approver == $role_manajer And $next_approver_unit == $unit_pengadaan){
+                $log->message   = 'Pengadaan sudah didisposisikan ke Manajer Fungsi Pengadaan Barang dan Jasa';
             }
 
-            \App\Models\ProcLog::insert([
-                'procurement' => $id, 
-                'message' => $message, 
-                'sender' => Auth::user()->id, 
-                'created_at' => date('Y-m-d H:i:s'), 
-                'updated_at' => date('Y-m-d H:i:s')
-            ]);
-                
-            if($next_approver != 3 And $next_approver_origin != 2){
-                if ($next_approver_unit == 2){
-                    \App\Models\ProcLog::insert([
-                        'procurement' => $id, 
-                        'message' => "Menunggu persetujuan Wakil Rektor II", 
-                        'sender' => Auth::user()->id, 
-                        'created_at' => date('Y-m-d H:i:s'), 
-                        'updated_at' => date('Y-m-d H:i:s')
-                    ]);
-                }else{
-                    $approver = \App\Models\Procurement::join('origins', 'origins.id', '=', 'procurements.approver_origin')
-                        ->join('roles', 'roles.id', '=', 'procurements.approver')
-                        ->select('roles.name AS role', 'origins.name AS origin')
-                        ->get()[0];
-    
-                    \App\Models\ProcLog::insert([
-                        'procurement' => $id, 
-                        'message' => "Menunggu persetujuan $approver->role $approver->origin", 
-                        'sender' => Auth::user()->id, 
-                        'created_at' => date('Y-m-d H:i:s'), 
-                        'updated_at' => date('Y-m-d H:i:s')
-                    ]);
-                }
-            }elseif ($next_approver == 3 And $next_approver_origin == 2){
-                \App\Models\ProcLog::insert([
-                    'procurement' => $id, 
-                    'message' => "Menunggu persetujuan Direktur Fungsi Pengelola Fasilitas Universitas", 
-                    'sender' => Auth::user()->id, 
-                    'created_at' => date('Y-m-d H:i:s'), 
-                    'updated_at' => date('Y-m-d H:i:s')
-                ]);
-            }
+            $log->save();
+
         }elseif (isset($_POST['update_by_staff'])){
-            \App\Models\Procurement::where('id', '=', $id)
-                ->update([
-                    'pic' => $request->pic,
-                    'category' => $request->category,
-                    'priority' => $request->priority
-                ]);
+            $procurement = \App\Models\Procurement::find($id);
 
-            \App\Models\ProcLog::insert([
-                'procurement' => $id,
-                'message' => 'Informasi pengadaan telah diperbaharui',
-                'sender' => Auth::user()->id,
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ]);
+            $procurement->category  = $request->category;
+            $procurement->priority  = $request->priority;
+
+            $procurement->save();
+
+            $log = new \App\Models\ProcLog;
+
+            $log->procurement   = $id;
+            $log->message       = 'Informasi pengadaan telah diperbaharui';
+            $log->sender        = Auth::user()->id;
+
+            $log->save();
         }elseif (isset($_POST['assign'])){
-            \App\Models\Procurement::where('id', '=', $id)
-                ->update([
-                    'pic' => $request->pic
-                ]);
+            $procurement = \App\Models\Procurement::find($id);
+
+            $procurement->pic = $request->pic;
+
+            $procurement->save();
             
-            $next_approver = 7;
-            $next_approver_origin = 2;
-            $next_approver_unit = 4;
+            /**
+             * Find ID with Role
+             * "Staf"
+             */
+            $role_staf = \App\Models\Role::select('id')
+                            ->where('name', '=', 'Staf')
+                            ->first()['id'];
+            
+            /**
+             * Find ID with Origin
+             * "Fungsi Pengelola Fasilitas Universitas"
+             */
+            $origin_staf = \App\Models\Origin::select('id')
+                                ->where('name', '=', 'Fungsi Pengelola Fasilitas Universitas')
+                                ->first()['id'];
+            
+            /**
+             * Find ID with Unit
+             * "Fungsi Pengadaan Barang dan Jasa"
+             */
+            $unit_staf = \App\Models\Unit::select('id')
+                            ->where('name', '=', 'Fungsi Pengadaan Barang dan Jasa')
+                            ->first()['id'];
 
-            \App\Models\Procurement::where('id', '=', $id)
-                ->update([
-                    'approver' => $next_approver,
-                    'approver_origin' => $next_approver_origin,
-                    'approver_unit' => $next_approver_unit,
-                    'approval_status' => "Disetujui"
-                ]);
+            $procurement->approver          = $role_staf;
+            $procurement->approver_origin   = $origin_staf;
+            $procurement->approver_unit     = $unit_staf;
 
-            \App\Models\ProcLog::insert([
-                'procurement' => $id, 
-                'message' => 'Pengadaan sudah diteruskan ke Staf Fungsi Pengadaan Barang dan Jasa', 
-                'sender' => Auth::user()->id, 
-                'created_at' => date('Y-m-d H:i:s'), 
-                'updated_at' => date('Y-m-d H:i:s')
-            ]);
+            $procurement->save();
+
+            $log = new \App\Models\ProcLog;
+
+            $log->procurement   = $id;
+            $log->message       = 'Pengadaan sudah diteruskan ke Staf Fungsi Pengadaan Barang dan Jasa';
+            $log->sender        = Auth::user()->id;
+
+            $log->save();
         }
 
-        return redirect(Route('show-procurement', ['id' => $id]));
+        return Redirect(Route('show-procurement', ['id' => $id]));
     }
 
     /**
@@ -721,17 +834,12 @@ class ProcurementController extends Controller
     public function addItemVendor(Request $request){
         $quotation = new \App\Models\Quotation;
 
-        $quotation->procurement = $request->input('procurement_id');
-        $quotation->item = $request->input('item_id');
-        $quotation->vendor = $request->input('vendor');
+        $quotation->procurement = $request->procurement_id;
+        $quotation->item = $request->item_id;
+        $quotation->vendor = $request->vendor;
 
         $quotation->save();
-
-        $vendor = \App\Models\Quotation::join('vendors', 'vendors.id', '=', 'quotations.vendor')
-            ->select('quotations.*', 'vendors.name AS vendor_name')
-            ->where('quotations.vendor', '=', $request->input('vendor'))
-            ->get()[0];
         
-        return $vendor;
+        return Redirect()->back();
     }
 }
