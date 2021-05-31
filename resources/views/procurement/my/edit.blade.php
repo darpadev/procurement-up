@@ -77,15 +77,6 @@
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="pic" class="form-label font-weight-bold">PIC Pengadaan</label>
-                        <select class="form-control" name="pic" id="pic">
-                            <option selected disabled>Piilh PIC Pengadaan</option>
-                            @foreach ($pic as $user)
-                                <option value="{{ $user->id }}" {{ $user->id == $procurement->pic ? 'selected' : NULL }}>{{ $user->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-6 mb-3">
                         <label for="category" class="form-label font-weight-bold">Kategori</label>
                         <select class="form-control" name="category" id="category">
                             <option selected disabled>Piilh Kategori</option>
