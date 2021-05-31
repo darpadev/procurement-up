@@ -104,44 +104,42 @@ $(document).ready(function(){
         })
     })
 
-    $('form.add-vendor-form').submit(function(event){
-        let data = $('form.add-vendor-form').serializeArray()
-        let table_position
-        $.each(data, (index, field) => {
-            if (field.name == 'item_id'){
-                table_position = field.value
-            }
-        })
-
-        $.ajax({
-            type: "POST",
-            url: '/item/add-vendor',
-            data: $('form.add-vendor-form').serializeArray(),
-            success: response => {
-                let table = $(`table.quotation-${table_position} > tbody`)
-                let table_length = $(`table.quotation-${table_position} > tbody > tr`).length + 1
-                table.append(
-                    `
-                    <tr>
-                        <th>${table_length}</th>
-                        <td>${response['vendor_name']}</td>
-                        <td>${table_length}</td>
-                        <td>${table_length}</td>
-                    </tr>
-                    `
-                )
-            }
-        })
-
-        event.preventDefault()
-    })
-
     let upload_spph = $('.upload-spph')
     let spph_form = $('.spph-form')
 
     $(upload_spph).each(index => {
         $(upload_spph[index]).on('click', function(event){
             $(spph_form[index]).slideToggle()
+
+            event.preventDefault()
+        })
+    })
+
+    let upload_quotation = $('.upload-quotation')
+    let quotation_form = $('.quotation-form')
+
+    $(upload_quotation).each(index => {
+        $(upload_quotation[index]).on('click', function(event){
+            $(quotation_form[index]).slideToggle()
+
+            event.preventDefault()
+        })
+    })
+
+    let more_action_btn = $('.more-action-btn')
+    let document_action = $('.document-action')
+    let more_document = $('.more-document')
+
+    $(more_action_btn).each(index => {
+        $(more_action_btn[index]).on('click', function(event){
+            if($(more_action_btn[index]).hasClass('text-danger')){
+                $(more_action_btn[index]).removeClass('text-danger')
+            }else{
+                $(more_action_btn[index]).addClass('text-danger')
+            }
+            console.log($(document_action[index]))
+            $(document_action[index]).slideToggle()
+            $(more_document[index]).slideToggle()
 
             event.preventDefault()
         })
