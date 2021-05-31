@@ -9,11 +9,11 @@ class HomeController extends Controller
 {
     public function index()
     {
-        $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->get()[0]['name'];
-        $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->get()[0]['name'];
-        $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->get();
+        $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->first()['name'];
+        $origin = \App\Models\Origin::select('name')->where('id', '=', Auth::user()->origin)->first()['name'];
+        $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->first();
 
-        if (($role == 'Wakil Rektor' And (isset($unit[0]->name) And $unit[0]->name == 'Bidang Keuangan dan Sumber Daya Organisasi')) Or ($role == 'Direktur' And $origin == 'Fungsi Pengelola Fasilitas Universitas') Or (($role == 'Manajer' Or $role == 'Staf') And $unit[0]->name == 'Fungsi Pengadaan Barang dan Jasa')){
+        if (($role == 'Wakil Rektor' And strlen($unit->name) And $unit->name == 'Bidang Keuangan dan Sumber Daya Organisasi Universitas Pertamina') Or ($role == 'Direktur' And $origin == 'Fungsi Pengelola Fasilitas Universitas') Or (($role == 'Manajer' Or $role == 'Staf') And $unit->name == 'Fungsi Pengadaan Barang dan Jasa')){
             if ($role == 'Wakil Rektor' Or $role == 'Manajer' Or $role == 'Staf'){
                 $need_approval = \App\Models\Procurement::where('approver', '=', Auth::user()->role)
                     ->where('approver_unit', '=', Auth::user()->unit)
