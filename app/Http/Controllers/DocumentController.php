@@ -19,6 +19,10 @@ class DocumentController extends Controller
         $item = $request->item;
 
         $ref = strtoupper($request->spph_ref);
+        if(!strpos($ref, '.pdf')){
+            $ref .= '.pdf';
+        }
+
         $doc_type = $file['type'];
         $doc = file_get_contents($file['tmp_name']);
         $date = date('Y-m-d H:i:s');
