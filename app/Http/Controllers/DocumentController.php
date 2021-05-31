@@ -12,46 +12,33 @@ class DocumentController extends Controller
         $pdo = DB::getPdo();
 
         $file = $_FILES[$name];
+        $doc_type = $file['type'];
+        $doc = file_get_contents($file['tmp_name']);
+        $date = date('Y-m-d H:i:s');
 
-        $id = $request->id;
-        $procurement = $request->procurement;
-        $vendor = $request->vendor;
-        $item = $request->item;
-
-        $ref = strtoupper($request->spph_ref);
+        $ref = strtoupper($request->ref);
         if(!strpos($ref, '.pdf')){
             $ref .= '.pdf';
         }
 
-        $doc_type = $file['type'];
-        $doc = file_get_contents($file['tmp_name']);
-        $date = date('Y-m-d H:i:s');
-        $type = $name;
-        
         if($name == 'quotation'){
+            $id = $request->id;
+
             $stmt = $pdo->prepare("UPDATE quotations 
-                                    SET name=?, type=?, doc_type=?, doc=?, updated_at=? 
-                                    WHERE id=? AND procurement=? AND vendor=? AND item=?");
+                                    SET name=?, doc_type=?, doc=?, updated_at=? 
+                                    WHERE id=?");
             $stmt->bindParam(1, $ref);
-            $stmt->bindParam(2, $type);
-            $stmt->bindParam(3, $doc_type);
-            $stmt->bindParam(4, $doc);
-            $stmt->bindParam(5, $date);
-            $stmt->bindParam(6, $id);
-            $stmt->bindParam(7, $procurement);
-            $stmt->bindParam(8, $vendor);
-            $stmt->bindParam(9, $item);
+            $stmt->bindParam(2, $doc_type);
+            $stmt->bindParam(3, $doc);
+            $stmt->bindParam(4, $date);
+            $stmt->bindParam(5, $id);
 
             $stmt->execute();
         }elseif ($name == 'spph'){
-            if (\App\Models\VendorDoc::where('procurement', '=', $procurement)->where('type', '=', 'spph')->doesntExist()){
-                $new_status = \App\Models\Status::select('id')->where('name', '=', 'SPPH')->get()[0];
-                \App\Models\Procurement::where('id', '=', $request->procurement)
-                    ->update([
-                        'status' => $new_status->id,
-                        'updated_at' => date('Y-m-d H:i:s')
-                    ]);
-            }
+            $procurement = $request->procurement;
+            $vendor = $request->vendor;
+            $item = $request->item;
+            $type = $name;
 
             $stmt = $pdo->prepare("INSERT INTO vendor_docs VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->bindParam(1, $procurement);
@@ -65,6 +52,12 @@ class DocumentController extends Controller
             $stmt->bindParam(9, $date);
 
             $stmt->execute();
+
+            $proc = \App\Models\Procurement::find($procurement);
+            $new_status = \App\Models\Status::select('id')->where('name', '=', 'SPPH')->get()[0];
+            $proc->status = $new_status;
+
+            $proc->save();
         }
 
         return (redirect(url()->previous()));
