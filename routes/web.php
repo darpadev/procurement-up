@@ -37,9 +37,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/update-procurement/{id}', [ProcurementController::class, 'update'])->name('update-procurement');
         Route::post('/item/add-category/{id}', [ProcurementController::class, 'addItemCategory'])->name('add-item-category');
         Route::post('/doc-upload', [ProcurementController::class, 'docUpload']);
+        Route::post('/item/add-vendor', [ProcurementController::class, 'addItemVendor'])->name('add-item-vendor');
         Route::get('/doc-destroy/{proc}/{id}', [ProcurementController::class, 'docDestroy'])->name('doc-destroy');
-        // AJAX
-        Route::post('/item/add-vendor', [ProcurementController::class, 'addItemVendor']);
         
     // UserController
     Route::get('/profile', [UserController::class, 'index'])->name('profile');
