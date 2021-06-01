@@ -125,14 +125,12 @@ class HomeController extends Controller
             ]);
         }elseif ($role == 'Kaprodi' Or $role == 'Manajer'){
             $need_approval = \App\Models\Procurement::where('applicant', '=', Auth::user()->id)
-                ->where('approval_status', '=', NULL)
-                ->whereYear('created_at', date('Y'))
+                ->where('pic', '=', NULL)
                 ->count();
             $total_progress = \App\Models\Procurement::join('statuses', 'statuses.id', '=', 'procurements.status')
                 ->where('applicant', '=', Auth::user()->id)
                 ->where('statuses.name', '<>', 'Memo')
                 ->where('statuses.name', '<>', 'Close')
-                ->whereYear('procurements.created_at', date('Y'))
                 ->count();
             $total_finish = \App\Models\Procurement::join('statuses', 'statuses.id', '=', 'procurements.status')
                 ->where('applicant', '=', Auth::user()->id)
