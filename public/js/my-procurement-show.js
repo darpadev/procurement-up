@@ -132,10 +132,12 @@ $(document).ready(function(){
 
     $(more_action_btn).each(index => {
         $(more_action_btn[index]).on('click', function(event){
-            if($(more_action_btn[index]).hasClass('text-danger')){
-                $(more_action_btn[index]).removeClass('text-danger')
+            if($(more_action_btn[index]).hasClass('btn-danger')){
+                $(more_action_btn[index]).removeClass('btn-danger')
+                $(more_action_btn[index]).addClass('btn-primary')
             }else{
-                $(more_action_btn[index]).addClass('text-danger')
+                $(more_action_btn[index]).removeClass('btn-primary')
+                $(more_action_btn[index]).addClass('btn-danger')
             }
             console.log($(document_action[index]))
             $(document_action[index]).slideToggle()

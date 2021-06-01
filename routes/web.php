@@ -38,6 +38,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/item/add-category/{id}', [ProcurementController::class, 'addItemCategory'])->name('add-item-category');
         Route::post('/doc-upload', [ProcurementController::class, 'docUpload']);
         Route::post('/item/add-vendor', [ProcurementController::class, 'addItemVendor'])->name('add-item-vendor');
+        Route::post('/item/delete-vendor', [ProcurementController::class, 'deleteItemVendor'])->name('delete-item-vendor');
         Route::get('/doc-destroy/{proc}/{id}', [ProcurementController::class, 'docDestroy'])->name('doc-destroy');
         
     // UserController

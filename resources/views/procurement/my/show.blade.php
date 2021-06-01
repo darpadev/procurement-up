@@ -370,7 +370,25 @@
                                 </td>
                                 @if ($role == 'Staf')
                                     <td>
-                                        <a href="" class="more-action-btn"><i class="fas fa-fw fa-caret-square-down"></i></a>
+                                        <div class="d-flex justify-content-center">
+                                            <a href="" class="more-action-btn btn btn-sm btn-primary mx-2">Detail</a>
+                                            {{-- Find any document related to the vendor --}}
+                                            @foreach ($vendor_docs as $doc)
+                                                @php $documentExist = false @endphp
+                                                @if ($doc->item == $item->id And $doc->vendor == $quotation->vendor) 
+                                                    @php $documentExist = true; break; @endphp
+                                                @endif
+                                            @endforeach
+                                            {{-- If no document exist, then show button to delete vendor --}}
+                                            @if (!$documentExist)
+                                                <form action="{{ Route('delete-item-vendor') }}" method="post" class="mx-2">
+                                                    @csrf
+                                                    <input type="hidden" name="id" value="{{ $quotation->id }}">
+                                                    <input type="hidden" name="procurement_id" value="{{ $procurement->id }}">
+                                                    <button class="btn btn-sm btn-danger">Hapus Vendor</button>
+                                                </form>
+                                            @endif
+                                        </div>
                                         <div class="document-action mt-2" style="display: none">
                                             <div class="d-flex justify-content-around">
                                                 @php $spphExist = false; $poExist = false @endphp

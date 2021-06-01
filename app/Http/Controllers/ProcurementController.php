@@ -857,4 +857,26 @@ class ProcurementController extends Controller
         
         return Redirect()->back();
     }
+
+    public function deleteItemVendor(Request $request){
+        $quotation = \App\Models\Quotation::find($request->id);
+
+        $quotation->delete();
+
+        $log = new \App\Models\ProcLog;
+
+        $log->procurement   = $request->procurement_id;
+        $log->message       = 'Vendor terdaftar telah dihapus';
+        $log->sender        = Auth::user()->id;
+
+        $log->save();
+
+        $procurement = \App\Models\Procurement::find($request->procurement_id);
+
+        $procurement->updated_at = date('Y-m-d H:i:s');
+
+        $procurement->save();
+
+        return Redirect()->Back();
+    }
 }
