@@ -298,7 +298,7 @@
                     @foreach ($quotations as $quotation)
                         @if ($quotation->item == $item->id)
                             <tr>
-                                <th>{{ $counter }}</th>
+                                <th style="{{ $quotation->winner ? "background-color: #a6ffad" : "" }}">{{ $counter }}</th>
                                 <td>{{ $quotation->vendor_name }}</td>
                                 <td class="text-left">
                                     @php $doc_count = 0 @endphp
@@ -373,32 +373,28 @@
                                         <a href="" class="more-action-btn"><i class="fas fa-fw fa-caret-square-down"></i></a>
                                         <div class="document-action mt-2" style="display: none">
                                             <div class="d-flex justify-content-around">
-                                                @php $spphExist = false @endphp
-                                                @php $poExist = false @endphp
+                                                @php $spphExist = false; $poExist = false @endphp
                                                 @if (count($vendor_docs))
                                                     @foreach ($vendor_docs as $doc)
                                                         @if ($doc->vendor == $quotation->vendor And $doc->item == $quotation->item)
-                                                            @if ($doc->type == 'spph')
-                                                                @php $spphExist = true @endphp
-                                                            @endif
+                                                            @if ($doc->type == 'spph') @php $spphExist = true @endphp @endif
 
-                                                            @if ($doc->type == 'po')
-                                                                @php $poExist = true @endphp
-                                                            @endif
+                                                            @if ($doc->type == 'po') @php $poExist = true @endphp @endif
                                                         @endif
                                                     @endforeach
                                                 @endif
 
-                                                {{-- Count vendor for each item --}}
-                                                @php $quotation_counter = 0 @endphp
+                                                {{-- Count vendor for each item and look for the winner --}}
+                                                @php $quotation_counter = 0; $winner_available = false; @endphp
                                                 @foreach ($quotations as $quotation)
-                                                    @if ($quotation->item == $item->id)
-                                                        @php $quotation_counter += 1 @endphp
-                                                    @endif
+                                                    @if ($quotation->item == $item->id) @php $quotation_counter += 1 @endphp @endif
+
+                                                    @if ($quotation->winner) @php $winner_available = true @endphp @endif
                                                 @endforeach
 
                                                 {{-- If SPPH not exist, then show button to upload SPPH --}}
                                                 @if (!$spphExist)
+                                                    {{-- If vendor is below minimun, do not allow to create SPPH --}}
                                                     @if ($quotation_counter >= 5)
                                                         <a href="{{ Route('generate-spph-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" class="btn btn-sm btn-primary">Generate SPPH</a>
                                                         <a href="" class="upload-spph btn btn-sm btn-success">Upload SPPH</a>                                                        
@@ -410,6 +406,18 @@
                                                 {{-- If SPPH exist and no quoation uploaded, then show button to upload quotation --}}
                                                 @if ($spphExist And !strlen($quotation->name))
                                                     <a href="" class="upload-quotation btn btn-sm btn-primary">Unggah Penawaran</a>
+                                                @endif
+ 
+                                                {{-- If winner is not set --}}
+                                                @if (!$winner_available)
+                                                    {{-- If quotation is available, then show button to choose the winner --}}
+                                                    @if ($quotation->doc !== NULL)
+                                                        <form action="{{ Route('set-winner') }}" method="post">
+                                                            @csrf
+                                                            <input type="hidden" name="id" value="{{ $quotation->id }}">
+                                                            <button class="btn btn-sm btn-success">Pemenang Tender</button>
+                                                        </form>
+                                                    @endif
                                                 @endif
 
                                                 {{-- If PO not exist and quotation declared as winner --}}

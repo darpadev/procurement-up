@@ -428,7 +428,8 @@ class ProcurementController extends Controller
             ->get()[0];      
         $quotations = \App\Models\Quotation::join('vendors', 'vendors.id', '=', 'quotations.vendor')
             ->select('quotations.*', 'vendors.name AS vendor_name')
-            ->orderBy('vendors.name')
+            ->orderBy('quotations.winner', 'DESC')
+            ->orderBy('vendors.name', 'ASC')
             ->where('quotations.procurement', '=', $id)
             ->get();
         $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->first()['name'];

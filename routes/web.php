@@ -67,6 +67,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/generate-bapp', [DocumentController::class, 'generateBapp'])->name('generate-bapp');
     Route::get('/view/{id}/{table}', [DocumentController::class, 'view'])->name('view-document-vendor');
 
+    // Declare Winning Quotation
+    Route::post('/set/winner', [DocumentController::class, 'setWinner'])->name('set-winner');
+
 // AuthController
 Route::get('/login', [AuthController::class, 'index'])->name('login');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');

@@ -509,4 +509,14 @@ class DocumentController extends Controller
             'procurement' => $procurement,
         ]);
     } 
+
+    public function setWinner(Request $request){
+        $quotation = \App\Models\Quotation::find($request->id);
+
+        $quotation->winner = true;
+
+        $quotation->save();
+
+        return Redirect()->Back();
+    }
 }
