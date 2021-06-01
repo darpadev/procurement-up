@@ -271,7 +271,12 @@
                             <select name="vendor" id="vendor" class="form-control mr-3" style="width: 30%" required>
                                 <option value="" selected>Pilih vendor yang akan ditambahkan</option>
                                 @foreach ($vendors as $vendor)
-                                    @if ($vendor->category == $item->category And $vendor->sub_category == $item->sub_category)
+                                    {{-- Check if there is quotation and vendor exist --}}
+                                    @php $vendorExist = false @endphp
+                                    @foreach ($quotations as $quotation)
+                                        @if ($quotation->vendor == $vendor->id) @php $vendorExist = true @endphp @endif
+                                    @endforeach
+                                    @if ($vendor->category == $item->category And $vendor->sub_category == $item->sub_category And !$vendorExist)
                                         <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
                                     @endif
                                 @endforeach
