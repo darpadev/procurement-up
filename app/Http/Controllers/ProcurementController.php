@@ -836,10 +836,24 @@ class ProcurementController extends Controller
         $quotation = new \App\Models\Quotation;
 
         $quotation->procurement = $request->procurement_id;
-        $quotation->item = $request->item_id;
-        $quotation->vendor = $request->vendor;
+        $quotation->item        = $request->item_id;
+        $quotation->vendor      = $request->vendor;
 
         $quotation->save();
+
+        $log = new \App\Models\ProcLog;
+
+        $log->procurement   = $request->procurement_id;
+        $log->message       = 'Vendor baru telah ditambahkan';
+        $log->sender        = Auth::user()->id;
+
+        $log->save();
+
+        $procurement = \App\Models\Procurement::find($request->procurement_id);
+
+        $procurement->updated_at = date('Y-m-d H:i:s');
+
+        $procurement->save();
         
         return Redirect()->back();
     }
