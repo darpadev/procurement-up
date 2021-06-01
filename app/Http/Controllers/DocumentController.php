@@ -517,6 +517,19 @@ class DocumentController extends Controller
 
         $quotation->save();
 
+        $item = \App\Models\Item::find($request->item_id);
+
+        $item->quotation_price  = $request->offering_price;
+        $item->nego_price       = $request->nego_price;
+
+        $item->save();
+
+        $procurement = \App\Models\Procurement::find($request->procurement_id);
+
+        $procurement->updated_at = date('Y-m-d H:i:s');
+
+        $procurement->save();
+
         return Redirect()->Back();
     }
 }

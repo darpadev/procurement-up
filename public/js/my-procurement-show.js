@@ -146,4 +146,15 @@ $(document).ready(function(){
             event.preventDefault()
         })
     })
+
+    let set_winner = $('.set-winner')
+    let set_winner_form = $('.set-winner-form')
+
+    $(set_winner).each(index => {
+        $(set_winner[index]).on('click', function(event){
+            $(set_winner_form[index]).slideToggle()
+
+            event.preventDefault()
+        })
+    })
 })
