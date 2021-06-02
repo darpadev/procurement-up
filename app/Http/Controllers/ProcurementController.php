@@ -433,8 +433,6 @@ class ProcurementController extends Controller
             ->where('quotations.procurement', '=', $id)
             ->get();
         $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->first()['name'];
-        $spec = array('available' => false, 'index' => 0);
-        $tor = array('available' => false, 'index' => 0);
         $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->first();
         $vendor_docs = \App\Models\VendorDoc::where('procurement', '=', $id)->get();
         $vendors = \App\Models\Vendor::join('vendor_categories', 'vendor_categories.vendor', '=', 'vendors.id')->select('id', 'name', 'category', 'sub_category')->orderBy('name')->get();
@@ -444,18 +442,13 @@ class ProcurementController extends Controller
             ->leftJoin('item_sub_categories', 'item_sub_categories.id', '=', 'items.sub_category')
             ->select('items.*')
             ->where('procurement', '=', $procurement->id)->get();
+        $registered_item = \App\Models\Item::join('item_categories', 'item_categories.id', '=', 'items.category')
+                                ->join('item_sub_categories', 'item_sub_categories.id', '=', 'items.sub_category')
+                                ->select('items.category AS cat_id', 'items.sub_category AS sub_id', 'item_categories.name AS cat_name', 'item_sub_categories.name AS sub_name')
+                                ->where('procurement', '=', $id)
+                                ->distinct()->get();
         $pic = \App\Models\User::select('name')->where('id', '=', $procurement->pic)->get();
         $priority = \App\Models\Priority::select('name')->where('id', '=', $procurement->priority)->get();
-
-        foreach ($documents as $index => $doc){
-            if ($doc->type == 'ToR'){
-                $tor['available'] = true;
-                $tor['index'] = $index;
-            }elseif ($doc->type == 'Spec'){
-                $spec['available'] = true;
-                $spec['index'] = $index;
-            }
-        }
 
         return view('procurement.my.show', [
             'category' => $category,
@@ -470,11 +463,10 @@ class ProcurementController extends Controller
             'procurement' => $procurement,
             'quotations' => $quotations,
             'role' => $role,
-            'spec' => $spec,
-            'tor' => $tor,
             'unit' => $unit,
             'vendor_docs' => $vendor_docs,
             'vendors' => $vendors,
+            'registered_item' => $registered_item,
         ]);
     }
 
@@ -488,19 +480,17 @@ class ProcurementController extends Controller
     {
         $role = \App\Models\Role::select('name')->where('id', '=', Auth::user()->role)->first()['name'];
         $origin = \App\Models\Origin::select('id', 'name')->where('id', '=', Auth::user()->origin)->first()['name'];
-        $unit = \App\Models\Unit::select('name')->where('id', '=', Auth::user()->unit)->first();
+        $unit = \App\Models\Unit::select('id', 'name')->where('id', '=', Auth::user()->unit)->first();
 
         if ($role == 'Staf' And $origin == 'Fungsi Pengelola Fasilitas Universitas' And $unit->name == 'Fungsi Pengadaan Barang dan Jasa'){            
             $procurement = \App\Models\Procurement::select('id', 'name', 'pic', 'category', 'priority')->where('id', '=', $id)->first();
             $categories = \App\Models\ProcCategory::select('id', 'name')->get();
             $priorities = \App\Models\Priority::select('id', 'name')->get();
-            $pic = \App\Models\User::select('id', 'name')->where('origin', '=', $role->id)->where('unit', '=', 4)->get();
 
             return view('procurement.my.edit', [
                 'procurement' => $procurement,
                 'categories' => $categories,
                 'priorities' => $priorities,
-                'pic' => $pic,
             ]);
         }else{
             $procurement = \App\Models\Procurement::where('id', '=', $id)->first();
@@ -835,9 +825,9 @@ class ProcurementController extends Controller
     public function addItemVendor(Request $request){
         $quotation = new \App\Models\Quotation;
 
-        $quotation->procurement = $request->procurement_id;
-        $quotation->item        = $request->item_id;
-        $quotation->vendor      = $request->vendor;
+        $quotation->procurement         = $request->procurement_id;
+        $quotation->item_sub_category   = $request->sub_cat;
+        $quotation->vendor              = $request->vendor;
 
         $quotation->save();
 
