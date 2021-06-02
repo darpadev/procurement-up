@@ -196,10 +196,10 @@
                                         </div>
                                     </div>
                                     <div class="col">
-                                        <p class="font-weight-bold badge badge-success p-2">Harga Final:</p>
+                                        <p class="font-weight-bold badge badge-success p-2">Diskon:</p>
                                         <div class="d-flex justify-content-between badge badge-success p-2">
                                             <span>Rp</span>
-                                            <span>{{ number_format($item->nego_price, 2, ',', '.') }}</span>
+                                            <span>{{ number_format($item->discount, 2, ',', '.') }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -438,11 +438,11 @@
                                                         <a href="" class="set-winner btn btn-sm btn-primary">Pemenang Tender</a>
                                                     @endif
                                                 @endif
-
+                                                
                                                 {{-- If PO not exist and quotation declared as winner --}}
                                                 @if (!$poExist And $quotation->winner)
-                                                    <a href="{{ Route('generate-spph-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" class="btn btn-sm btn-primary">Generate PO</a>
-                                                    <a href="" class="upload-spph btn btn-sm btn-success">Unggah PO</a>
+                                                    <a href="{{ Route('generate-po-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" class="btn btn-sm btn-primary">Generate PO</a>
+                                                    <a href="" class="upload-po btn btn-sm btn-success">Unggah PO</a>
                                                 @endif
                                             </div>
                                             {{-- Form - Upload SPPH --}}
@@ -472,7 +472,7 @@
                                                 <input type="hidden" name="item_id" value="{{ $item->id }}">
                                                 <input type="hidden" name="procurement_id" value="{{ $procurement->id }}">
                                                 <input type="number" name="offering_price" placeholder="Harga Penawaran" class="form-control mt-2">
-                                                <input type="number" name="nego_price" placeholder="Harga Final" class="form-control mt-2">
+                                                <input type="number" name="discount" placeholder="Harga Final" class="form-control mt-2">
                                                 <button class="btn btn-sm btn-success mt-2">Kirim</button>
                                             </form>
                                         </div>

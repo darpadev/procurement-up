@@ -79,8 +79,8 @@ class DocumentController extends Controller
     }
 
     public function generateSpph(Request $request){
-        $procurement = \App\Models\Procurement::where('id', '=', $request->proc_id)->get()[0];
-        $vendor = \App\Models\Vendor::where('id', '=', $request->vendor_id)->get()[0];
+        $procurement = \App\Models\Procurement::where('id', '=', $request->proc_id)->first();
+        $vendor = \App\Models\Vendor::where('id', '=', $request->vendor_id)->first();
         $items = \App\Models\Quotation::join('items', 'items.id', '=', 'quotations.item')
             ->select('items.name', 'items.specs', 'items.qty')
             ->where('quotations.vendor', '=', $request->vendor_id)
@@ -90,10 +90,10 @@ class DocumentController extends Controller
             ->select('users.email')
             ->where('roles.name', '=', 'Manajer')
             ->where('units.name', '=', 'Fungsi Pengadaan Barang dan Jasa')
-            ->get()[0];
+            ->first();
         $pic = \App\Models\User::join('procurements', 'procurements.pic', '=', 'users.id')
             ->select('email')
-            ->get()[0];
+            ->first();
 
         $mail_list = "
         <li><a href='mailto:procurement@universitaspertamina.ac.id'>procurement@universitaspertamina.ac.id</a></li>
@@ -477,6 +477,264 @@ class DocumentController extends Controller
         return $mpdf->Output($doc_name, "I");
     }
 
+    public function generatePo(Request $request){
+        $vendor = \App\Models\Vendor::where('id', '=', $request->vendor_id)->first();
+        $procurement = \App\Models\Procurement::select('name')->where('id', '=', $request->proc_id)->first();
+        $items = \App\Models\Item::where('procurement', '=', $request->proc_id)->get();
+
+        $procurement_value = 0;
+        $total_discount = 0;
+
+        foreach($items as $index => $item){
+            if($index == count($request->item)){
+                break;
+            }
+            if($item->id == $request->item[$index]){
+                $procurement_value += $item->quotation_price * $item->qty;
+                $total_discount += $item->discount * $item->qty;
+            }
+        }
+        
+        $final_price = ($procurement_value - $total_discount) * 1.1;
+        // CSS
+        $font_bold = "font-weight: bold;";
+        $font_italic = "font-style: italic;";
+        $font_size_body = "font-size: 10pt;";
+        $text_justify = "text-align: justify; text-justify: inter-word;";
+        $table_style = $font_size_body . "border-collapse: collapse; border: 1px solid black; width: 100%;";
+        $table_border = "border: 1px solid black;";
+
+        $mpdf = new \Mpdf\Mpdf();
+
+        $doc_name = "PO_" . $vendor->name . "_" . $procurement->name . "_" . date('Ymd-His') . ".pdf";
+
+        $mpdf->SetTitle($doc_name);
+
+        $header_logo_path = asset('img/universitas-pertamina.png');
+
+        $mpdf->WriteHTML(
+            "
+            <table style='$table_border $table_style'>
+                <tr>
+                    <th style='$table_border width: 120; height: 90'><img src='https://universitaspertamina.ac.id/wp-content/uploads/2017/11/logo-Press-103x75.png'></th>
+                    <th style='text-align: left; padding-left: 10px;'>
+                        UNIVERSITAS PERTAMINA <br>
+                        <p style='font-weight: normal'>
+                            Komplek Universitas Pertamina <br>
+                            Jalan Teuku Nyak Arief <br>
+                            Simprug, Jakarta. 12220.
+                        </p>
+                    </th>
+                    <th style='width: 5%'></th>
+                    <th style='width: 5%'></th>
+                    <th style='width: 10%'></th>
+                    <th style='width: 5%'></th>
+                    <th style='width: 5%'></th>
+                    <th style='width: 10%'></th>
+                    <th style='width: 10%'></th>
+                </tr>
+                <tr>
+                    <td colspan='2' style='$table_border padding: 5px 0 5px 5px; vertical-align: top; height: 350'>
+                        <p style='$font_bold'>
+                            Purchase Order (PO) <br>
+                            $procurement->name
+                        </p>
+                    </td>
+                    <td colspan='4' style='$table_border padding: 5px 0 5px 5px; vertical-align: top'>
+                        <p style='$font_bold'>Nomor SPMP/Tanggal</p>
+                        $request->ref
+                        " . date('d F Y') . "
+                    </td>
+                    <td colspan='3' rowspan='2' style='$table_border padding: 5px 0 5px 5px; vertical-align: top'>
+                        <p style='$font_bold'>Alamat Pengiriman</p>
+                        Universitas Pertamina <br>
+                        Komplek Universitas Pertamina <br>
+                        Jalan Teuku Nyak Arief <br>
+                        Simprug, Jakarta. 12220.
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan='2' style='$table_border $font_bold padding: 5px 0 5px 5px;'>
+                        Vendor: <br>
+                        $vendor->name <br>
+                        $vendor->address
+                    </td>
+                    <td colspan='4' style='$table_border padding: 5px 0 5px 5px;'>
+                        <p style='$font_bold'>Nomor Vendor</p>
+                        $vendor->reg_code
+                        <br>
+                        <p style='$font_bold'>NPWP Vendor</p>
+                        $vendor->tin
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan='3' style='$font_bold text-align: center; padding: 5px 0 5px 5px; vertical-align: top;'>
+                        Ketentuan Pengiriman
+                    </td>                        
+                    <td colspan='6' rowspan='2' style='$table_border padding: 5px 0 5px 5px; vertical-align: top;'>
+                        <p style='$font_bold'>Metode Pembayaran</p>
+                        Transfer antar bank <br>
+                        <p style='$font_bold'>Kurs Mata Uang</p>
+                        Rupiah <br>
+                        <p style='$font_bold'>Nama Bank</p>
+                        $vendor->name_account<br>
+                        <p style='$font_bold'>Nomor Rekening</p>
+                        $vendor->bank_account<br>
+                        <br>
+                        <p style='$font_bold'>Ketentuan Pembayaran</p>
+                        <br>
+                        <p>
+                            <span style='$font_bold'>Termin Pembayaran pertama </span>
+                            sebesar 50% dari nilai harga PO, pembayaran dapat dilakukan setelah
+                            PO (<i>Purchase Order</i>) ditandatangani kedua belah pihak. Dituangkan
+                            dalam berita acara pembayaran termin pertama, <i>invoice</i>, kuitansi
+                            bermaterai, surat permohonan pembayaran, faktur pajak, dan PO asli yang
+                            sudah ditandatangani kedua belah pihak.
+                        </p>
+                        <br>
+                        <p>
+                            <span style='$font_bold'>Termin Pembayaran kedua </span>
+                            sebesar 50% setelah seluruh barang diterima penuh 100% oleh pihak
+                            Universitas Pertamina. Dituangkan dalam 
+                            <span style='$font_bold'>Berita Acara Serah Terima Barang</span>, 
+                            <i>invoice</i>, kuitansi bermaterai, surat permohonan pembayaran,
+                            dan faktur pajak.
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan='3' style='padding: 5px 0 5px 5px; vertical-align: top;'>
+                        <ol>
+                            <li>
+                                Jangka pelaksanaan pekerjaan termasuk instalasi dan <i>training</i>
+                                paling lambat selama $request->delivery_time " . strtolower($request->time_unit) . "
+                                sejak PO ini diterima oleh Vendor
+                            </li>
+                            <li>
+                                Vendor memberikan jaminan garansi atas kerusakan yang bukan
+                                disebabkan oleh <i>User</i> (rusak pada saat pengiriman).
+                            </li>
+                            <li>
+                                Vendor menjamin keaslian barang dan melampirkan perjanjian
+                                keagenan dengan <i>principal</i> dan/atau surat terdaftar
+                                sebagai agen/distributor pada departemen perdagangan atau
+                                surat dukungan keagenan yang sah secara hukum.
+                            </li>
+                            <li>
+                                Keterlambatan atas penyelesaian pekerjaan dikenakan denda
+                                1‰ (permil) per hari, dan maskimal denda 5% (persen) 
+                                (Rp" . number_format($final_price, '0', '', '.') . "). Denda tidak mengurangi kewajiban 
+                                vendor terhadap pekerjaan.
+                            </li>
+                        </ol>
+                    </td>
+                </tr>
+            </table>
+            "
+        );
+
+        $mpdf->AddPageByArray(['type' => '']);
+
+        $item_list = "";
+
+        $counter = 1;
+        foreach($items as $index => $item){
+            if($index == count($request->item)){
+                break;
+            }
+            if($item->id == $request->item[$index]){
+                $item_list .= "
+                    <tr>
+                        <th style='$table_border'>$counter</th>
+                        <td style='$table_border'>$item->name</td>
+                        <td style='$table_border'>$item->specs</td>
+                        <td style='$table_border'>$item->qty</td>
+                        <td style='$table_border'>" . $request->item_unit[$index] . "</td>
+                        <td style='$table_border'>Rp" . number_format($item->quotation_price, '0', '', '.') . "</td>
+                        <td colspan='2' style='$table_border'>Rp" . number_format($item->quotation_price * $item->qty, '0', '', '.') . "</td>
+                        <td style='$table_border'>$request->delivery_time " . strtolower($request->time_unit) . " sejak PO diterima vendor</td>
+                    </tr>
+                ";
+            }
+            $counter += 1;
+        }
+
+        $mpdf->WriteHTML(
+            "
+            <table style='$table_border $table_style text-align: center;'>
+                <tr>
+                    <th colspan='9' style='padding: 5px 0;'>Rincian Pembayaran</th>
+                </tr>
+                <tr>
+                    <th style='$table_border font-size: 8pt; width: 5%; padding: 5px 2px;'>No</th>
+                    <th style='$table_border font-size: 8pt; width: 10%; padding: 5px 2px;'>Nama Barang</th>
+                    <th style='$table_border font-size: 8pt; width: 20%; padding: 5px 2px;'>Spesifikasi</th>
+                    <th style='$table_border font-size: 8pt; width: 7%; padding: 5px 2px;'>Jumlah</th>
+                    <th style='$table_border font-size: 8pt; width: 7%; padding: 5px 2px;'>Satuan</th>
+                    <th style='$table_border font-size: 8pt; width: 15%; padding: 5px 2px;'>Harga Satuan</th>
+                    <th colspan='2' style='$table_border font-size: 8pt; padding: 5px 2px;'>Total Harga</th>
+                    <th style='$table_border font-size: 8pt; width: 15%; padding: 5px 2px;'>Waktu Pengiriman</th>
+                </tr>
+                $item_list
+                <tr>
+                    <th colspan='6' style='$table_border text-align: right; padding: 5px;'>Harga Total Penawaran</th>
+                    <td style='border-bottom: 1px solid black; width: 5%; padding: 5px;'>Rp</td>
+                    <td style='border-bottom: 1px solid black; width: 10%; padding: 5px;'></td>
+                    <td style='text-align: right; border-bottom: 1px solid black; padding: 5px;'>Rp" . number_format($procurement_value, '0', '', '.') . "</td>
+                </tr>
+                <tr>
+                    <th colspan='6' style='$table_border text-align: right; padding: 5px;'>Harga Total Negosiasi</th>
+                    <td style='border-bottom: 1px solid black; width: 5%; padding: 5px;'>Rp</td>
+                    <td style='border-bottom: 1px solid black; width: 10%; padding: 5px;'></td>
+                    <td style='text-align: right; border-bottom: 1px solid black; padding: 5px;'>Rp" . number_format($total_discount, '0', '', '.') . "</td>
+                </tr>
+                <tr>
+                    <th colspan='6' style='$table_border text-align: right; padding: 5px;'>Total Harga Pembelian</th>
+                    <td style='border-bottom: 1px solid black; width: 5%; padding: 5px;'>Rp</td>
+                    <td style='border-bottom: 1px solid black; width: 10%; padding: 5px;'></td>
+                    <td style='text-align: right; border-bottom: 1px solid black; padding: 5px;'>Rp" . number_format($procurement_value - $total_discount, '0', '', '.') . "</td>
+                </tr>
+                <tr>
+                    <th colspan='6' style='$table_border text-align: right; padding: 5px;'>Total Harga Akhir Pembelian Plus PPN 10%</th>
+                    <th style='border-bottom: 1px solid black; width: 5%; padding: 5px;'>Rp</th>
+                    <td style='border-bottom: 1px solid black; width: 10%; padding: 5px;'></td>
+                    <th style='text-align: right; border-bottom: 1px solid black; padding: 5px;'>Rp" . number_format($final_price, '0', '', '.') . "</th>
+                </tr>
+                <tr>
+                    <td colspan='9' style='$table_border padding: 5px; text-align: left;'>
+                        Barang/Jasa dianggap sudah diserahkan apabila seluruh barang/unit telah diterima
+                        di Universitas Pertamina, Jalan Teuku Nyak Arief, Simprug, Jakarta dan tertuang
+                        dalam Berita Acara Serah Terima dengan Pengguna yang bersangkutan.
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan='5' style='border-right: 1px solid black; text-align: left; vertical-align: top;'>
+                        Kami menerima SPMP ini dan menyetujui ketentuan-ketentuan yang tercantum dalam SPMP ini. <br>
+                        Tertanda: <br>
+                    </td>
+                    <td colspan='4' style='text-align: left; vertical-align: bottom'>Disetujui oleh:</td>
+                </tr>
+                <tr>
+                    <td colspan='5' style='$font_bold border-right: 1px solid black; height: 200; text-align: left; vertical-align: top;'>
+                        $vendor->name
+                    </td>
+                    <td colspan='4' style='vertical-align: top;'></td>
+                </tr>
+                <tr>
+                    <td colspan='5' style='$table_border text-align: left;'>
+                        Tanggal : 
+                        <br>
+                        Tempat : 
+                    </td>
+                    <td colspan='4' style='$table_border'></td>
+                </tr>
+            </table>
+            "
+        );
+
+        return $mpdf->Output($doc_name, "I");
+    }
+
     public function generateSpphForm($proc_id, $vendor_id){
         $vendor = \App\Models\Vendor::select('name')->where('id', '=', $vendor_id)->get()[0];
         $procurement = \App\Models\Procurement::select('ref', 'name')->where('id', '=', $proc_id)->get()[0];
@@ -495,7 +753,7 @@ class DocumentController extends Controller
     }
 
     public function generateBappForm($proc_id, $vendor_id){
-        $procurement = \App\Models\Procurement::select('ref', 'name')->where('id', '=', $proc_id)->get()[0];
+        $procurement = \App\Models\Procurement::select('ref', 'name')->where('id', '=', $proc_id)->first();
         $items = \App\Models\Quotation::join('items', 'items.id', '=', 'quotations.item')
             ->select('items.id', 'items.name', 'items.specs', 'quotations.vendor')
             ->where('quotations.vendor', '=', $vendor_id)
@@ -510,6 +768,21 @@ class DocumentController extends Controller
         ]);
     } 
 
+    public function generatePoForm($proc_id, $vendor_id){
+        $procurement    = \App\Models\Procurement::select('name')->where('id', '=', $proc_id)->first();
+        $items          = \App\Models\Item::join('quotations', 'quotations.item', '=', 'items.id')
+                            ->select('items.*', 'quotations.vendor AS vendor')
+                            ->where('quotations.vendor', '=', $vendor_id)
+                            ->get();
+
+        return view('procurement.documents.po.form', [
+            'proc_id' => $proc_id,
+            'vendor_id' => $vendor_id,
+            'procurement' => $procurement,
+            'items' => $items
+        ]);
+    }
+
     public function setWinner(Request $request){
         $quotation = \App\Models\Quotation::find($request->id);
 
@@ -520,7 +793,7 @@ class DocumentController extends Controller
         $item = \App\Models\Item::find($request->item_id);
 
         $item->quotation_price  = $request->offering_price;
-        $item->nego_price       = $request->nego_price;
+        $item->discount       = $request->discount;
 
         $item->save();
 

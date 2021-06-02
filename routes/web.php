@@ -59,6 +59,7 @@ Route::middleware(['auth'])->group(function () {
     // Request Form
     Route::get('/generate-spph/form/{proc_id}/{vendor_id}', [DocumentController::class, 'generateSpphForm'])->name('generate-spph-form');
     Route::get('/generate-bapp/form/{proc_id}/{vendor_id}', [DocumentController::class, 'generateBappForm'])->name('generate-bapp-form');
+    Route::get('/generate-po/form/{proc_id}/{vendor_id}', [DocumentController::class, 'generatePoForm'])->name('generate-po-form');
 
     // Upload Document
     Route::post('/upload/{name}', [DocumentController::class, 'upload'])->name('upload');
@@ -66,6 +67,7 @@ Route::middleware(['auth'])->group(function () {
     // Export Document 
     Route::post('/generate-spph', [DocumentController::class, 'generateSpph'])->name('generate-spph');
     Route::post('/generate-bapp', [DocumentController::class, 'generateBapp'])->name('generate-bapp');
+    Route::post('/generate-po', [DocumentController::class, 'generatePo'])->name('generate-po');
     Route::get('/view/{id}/{table}', [DocumentController::class, 'view'])->name('view-document-vendor');
 
     // Declare Winning Quotation
