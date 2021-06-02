@@ -55,7 +55,7 @@ class DocumentController extends Controller
 
             $proc = \App\Models\Procurement::find($procurement);
             $new_status = \App\Models\Status::select('id')->where('name', '=', 'SPPH')->get()[0];
-            $proc->status = $new_status;
+            $proc->status = $new_status->id;
 
             $proc->save();
         }

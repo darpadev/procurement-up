@@ -150,7 +150,7 @@
                         </div>
                     @elseif (($role == 'Wakil Rektor' And $unit->name == 'Bidang Keuangan dan Sumber Daya Organisasi Universitas Pertamina') Or ($role == 'Direktur' And $origin == 'Fungsi Pengelola Fasilitas Universitas'))
                         <button class="btn btn-primary" name="approve">Disposisi</button>
-                    @elseif ($role != 'Staf' And $unit->name != 'Fungsi Pengadaan Barang dan Jasa')
+                    @elseif ($role != 'Staf')
                         <button class="btn btn-primary" name="approve">Approve</button>
                     @endif
                 </form>
@@ -378,8 +378,8 @@
                                         <div class="d-flex justify-content-center">
                                             <a href="" class="more-action-btn btn btn-sm btn-primary mx-2">Detail</a>
                                             {{-- Find any document related to the vendor --}}
+                                            @php $documentExist = false @endphp
                                             @foreach ($vendor_docs as $doc)
-                                                @php $documentExist = false @endphp
                                                 @if ($doc->item == $item->id And $doc->vendor == $quotation->vendor) 
                                                     @php $documentExist = true; break; @endphp
                                                 @endif
