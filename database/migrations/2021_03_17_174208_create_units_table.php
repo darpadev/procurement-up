@@ -41,6 +41,6 @@ class CreateUnitsTable extends Migration
     {
         DB::statement('SET FOREIGN_KEY_CHECKS = 0');
         Schema::dropIfExists('units');
-        
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1');
     }
 }
