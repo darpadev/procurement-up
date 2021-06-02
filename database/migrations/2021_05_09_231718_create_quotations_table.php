@@ -18,7 +18,7 @@ class CreateQuotationsTable extends Migration
             $table->id();
             $table->foreignId('procurement')->constrained('procurements');
             $table->foreignId('vendor')->constrained('vendors');
-            $table->foreignId('item')->constrained('items');
+            $table->foreignId('item_sub_category')->constrained('item_sub_categories');
             $table->string('name')->nullable();
             $table->string('doc_type')->nullable();
             $table->boolean('winner')->default(0);
@@ -35,6 +35,8 @@ class CreateQuotationsTable extends Migration
      */
     public function down()
     {
+        DB::statement('SET FOREIGN_KEY_CHECKS = 0');
         Schema::dropIfExists('quotations');
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1');
     }
 }

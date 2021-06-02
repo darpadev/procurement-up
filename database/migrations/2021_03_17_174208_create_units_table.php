@@ -23,7 +23,6 @@ class CreateUnitsTable extends Migration
         DB::table('origins')->insert([
             ['name' => 'Rektorat', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
             ['name' => 'Fungsi Pengelola Fasilitas Universitas', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
-            ['name' => 'Fungsi Lain', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
             ['name' => 'Fakultas Teknologi Industri', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
             ['name' => 'Fakultas Sains dan Ilmu Komputer', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
             ['name' => 'Fakultas Perencanaan Infrastruktur', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
@@ -40,6 +39,8 @@ class CreateUnitsTable extends Migration
      */
     public function down()
     {
+        DB::statement('SET FOREIGN_KEY_CHECKS = 0');
         Schema::dropIfExists('units');
+        
     }
 }

@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class CreateItemSubCategoriesTable extends Migration
 {
@@ -28,6 +29,8 @@ class CreateItemSubCategoriesTable extends Migration
      */
     public function down()
     {
+        DB::statement('SET FOREIGN_KEY_CHECKS = 0');
         Schema::dropIfExists('item_sub_categories');
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1');
     }
 }
