@@ -148,8 +148,7 @@ class DocumentController extends Controller
             "
         );
 
-        setlocale(LC_TIME, 'id_ID');
-        $mpdf->WriteHTML("<p style='$font_size_body'>Jakarta, " . strftime('%d %B %Y') .  '</p>');
+        $mpdf->WriteHTML("<p style='$font_size_body'>Jakarta, " . dateIDN(date('Ymd')) .  '</p>');
 
         $mpdf->WriteHTML(
             "<table style='$font_size_body'>
@@ -177,7 +176,7 @@ class DocumentController extends Controller
             </p>
             <p style='$text_justify $font_size_body'>
                 Dengan hormat, sehubungan dengan memorandum no. $procurement->ref 
-                pada tanggal " . date("d F Y", strtotime($procurement->created_at)) . "
+                pada tanggal " . dateIDN($procurement->created_at) . "
                 tentang <span style='$font_bold'>$procurement->name</span>, 
                 kami mengharapkan perusahaan Bapak/Ibu untuk dapat mengajukan penawaran
                 terkait pengadaan tersebut. Spesifikasi kebutuhan dapat dilihat pada Lampiran.
