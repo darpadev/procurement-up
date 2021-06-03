@@ -81,10 +81,11 @@ class DocumentController extends Controller
     public function generateSpph(Request $request){
         $procurement = \App\Models\Procurement::where('id', '=', $request->proc_id)->first();
         $vendor = \App\Models\Vendor::where('id', '=', $request->vendor_id)->first();
-        $items = \App\Models\Quotation::join('items', 'items.id', '=', 'quotations.item')
-            ->select('items.name', 'items.specs', 'items.qty')
-            ->where('quotations.vendor', '=', $request->vendor_id)
-            ->get();
+        $items = \App\Models\Item::join('quotations', 'quotations.item_sub_category', '=', 'items.sub_category')
+                    ->select('items.name', 'items.specs', 'items.qty')
+                    ->where('items.procurement', '=', $request->proc_id)
+                    ->where('quotations.vendor', '=', $request->vendor_id)
+                    ->get();
         $proc_manager = \App\Models\User::join('roles', 'roles.id', '=', 'users.role')
             ->join('units', 'units.id', '=', 'users.unit')
             ->select('users.email')
@@ -165,7 +166,7 @@ class DocumentController extends Controller
                 <tr>
                     <td style='vertical-align: top;'>Perihal</td>
                     <td style='vertical-align: top;'>:</td>
-                    <td style='$font_bold'>Permohonan Proposal Penawawan Harga $procurement->name</td>
+                    <td style='$font_bold'>Permohonan Proposal Penawaran Harga $procurement->name</td>
                 </tr>
             </table>"
         );
@@ -736,10 +737,11 @@ class DocumentController extends Controller
     }
 
     public function generateSpphForm($proc_id, $vendor_id){
-        $vendor = \App\Models\Vendor::select('name')->where('id', '=', $vendor_id)->get()[0];
+        $vendor = \App\Models\Vendor::select('name')->where('id', '=', $vendor_id)->first();
         $procurement = \App\Models\Procurement::select('ref', 'name')->where('id', '=', $proc_id)->get()[0];
-        $items = \App\Models\Quotation::join('items', 'items.id', '=', 'quotations.item')
+        $items = \App\Models\Item::join('quotations', 'quotations.item_sub_category', '=', 'items.sub_category')
             ->select('items.name', 'items.specs')
+            ->where('items.procurement', '=', $proc_id)
             ->where('quotations.vendor', '=', $vendor_id)
             ->get();
         

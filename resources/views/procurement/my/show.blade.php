@@ -360,13 +360,16 @@
                                     <tr>
                                         <th style="{{ $quotation->winner ? "background-color: #a6ffad" : "" }}">{{ $counter }}</th>
                                         <td>{{ $quotation->vendor_name }}</td>
+                                        {{-- Show available documents on correspond vendor --}}
                                         <td class="text-left">
                                             @php $doc_count = 0 @endphp
+                                            {{-- Count for available documents --}}
                                             @foreach ($vendor_docs as $doc)
                                                 @if ($doc->item == $quotation->item)
                                                     @php $doc_count += 1 @endphp
                                                 @endif
                                             @endforeach
+                                            {{-- If documents exist, then show badge for each documents --}}
                                             @if ($doc_count)
                                                 <div class="d-flex justify-content-center">
                                                     {{-- Show "SPPH" document badge --}}
@@ -407,9 +410,9 @@
 
                                                     {{-- Show "Quotation" document --}}
                                                     @if (strlen($quotation->name))
-                                                    Penawaran: <br>
-                                                    <a href="{{ Route('view-document-vendor', ['id' => $quotation->id, 'table' => 'vendor_docs']) }}" target="_blank">{{ $quotation->name }}</a>
-                                                    <br><br>
+                                                        Penawaran: <br>
+                                                        <a href="{{ Route('view-document-vendor', ['id' => $quotation->id, 'table' => 'vendor_docs']) }}" target="_blank">{{ $quotation->name }}</a>
+                                                        <br><br>
                                                     @endif
 
                                                     {{-- Show "PO" document --}}
@@ -422,12 +425,14 @@
                                                         @endif
                                                     @endforeach
                                                 </div>
+                                            {{-- If no document exist, show the following badge --}}
                                             @else
                                                 <div class="d-flex justify-content-center">
                                                     <span class="badge badge-danger">Tidak ada berkas</span>
                                                 </div>
                                             @endif
                                         </td>
+                                        {{-- End of available documents on correspons vendor --}}
                                         @if ($role == 'Staf')
                                             <td>
                                                 <div class="d-flex justify-content-center">
@@ -451,6 +456,7 @@
                                                 </div>
                                                 <div class="document-action mt-2" style="display: none">
                                                     <div class="d-flex justify-content-around">
+                                                        {{-- Find for SPPH and PO --}}
                                                         @php $spphExist = false; $poExist = false @endphp
                                                         @if (count($vendor_docs))
                                                             @foreach ($vendor_docs as $doc)
@@ -460,14 +466,17 @@
                                                                 @endif
                                                             @endforeach
                                                         @endif
+                                                        {{-- End of find for SPPH and PO --}}
 
                                                         {{-- Count vendor for each item and look for the winner --}}
                                                         @php $quotation_counter = 0; $winner_available = false; @endphp
-                                                        @foreach ($quotations as $quotation)
-                                                            @if ($quotation->item_sub_category == $sub_category->sub_id) @php $quotation_counter += 1 @endphp @endif
+                                                        @foreach ($quotations as $item)
+                                                            @if ($item->item_sub_category == $sub_category->sub_id) @php $quotation_counter += 1 @endphp @endif
 
-                                                            @if ($quotation->winner) @php $winner_available = true @endphp @endif
+                                                            @if ($item->winner) @php $winner_available = true @endphp @endif
                                                         @endforeach
+                                                        {{-- End of count vendor for each item and look for the winner --}}
+
                                                         {{-- If SPPH not exist, then show button to upload SPPH --}}
                                                         @if (!$spphExist)
                                                             {{-- If vendor is below minimum, do not allow to create SPPH --}}
