@@ -14,7 +14,7 @@
     </div>
 
     {{-- Information --}}
-    <div class="card shadow p-4 mb-4">                
+    <div class="card shadow p-4 mb-4">
         <div class="row g-3">
             <div class="col-md-6 mb-3">
                 <label for="priority" class="form-label font-weight-bold">Prioritas</label>
@@ -166,6 +166,70 @@
 
     {{-- Unit List --}}
     <div id="item-content" class="content-active card shadow p-4 mb-4">
+        {{-- Count uncategorized items --}}
+        @php $counter = 0 @endphp
+        @foreach ($items as $item)
+            @if ($item->category == NULL) @php $counter += 1 @endphp @endif
+        @endforeach
+        {{-- End of count uncategorized items --}}
+
+        {{-- Show uncategorized items --}}
+        @if($counter)
+            <h2 class="font-weight-bold" style="font-size: 24px;">Daftar barang/unit yang belum dikategorikan</h2>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover text-center">
+                    <thead>
+                        <tr>
+                            <th style="white-space: nowrap; width: 1%;">#</th>
+                            <th>Nama Barang</th>
+                            <th style="width: 50%">#</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php $counter = 1 @endphp
+                        @foreach ($items as $item)
+                            @if ($item->category == NULL)
+                                <tr>
+                                    <th>{{ $counter }}</th>
+                                    <td>{{ $item->name }}</td>
+                                    <td>
+                                        <a href="" class="add-item-category-btn btn btn-sm btn-primary">
+                                            Tambahkan Kategori
+                                        </a>
+                                        <div class="add-item-category-form" style="display: none">
+                                            <hr>
+                                            <form action="{{ Route('add-item-category', ['id' => $item->id]) }}" method="post">
+                                                @csrf
+                                                <div class="row mb-2">
+                                                    <div class="col-6">
+                                                        <select name="category" class="add-item-category form-control" required>
+                                                            <option value="">Pilih Kategori</option>
+                                                            @foreach ($item_categories as $item)
+                                                                <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <select name="sub_category" class="add-item-sub-category form-control" required>
+                                                            <option value="">Pilih Sub Kategori</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <button class="btn btn-sm btn-primary">Kirim</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @php $counter += 1 @endphp
+                            @endif
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+        {{-- End of uncategorized items --}}
+
+        {{-- Show items value breakdown --}}
         <table class="table table-hover table-bordered text-center">
             <thead>
                 <tr>
@@ -234,50 +298,40 @@
                     </tr>
             </tbody>
         </table>
+        {{-- End of items value breakdown --}}
     </div>
 
     {{-- Bidder List --}}
     <div id="bidder-content" class="card shadow p-4 mb-4" style="display: none;">
-        @foreach ($items as $item)
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h3 class="font-weight-bold" style="font-size: 15pt;">{{ $item->name }}</h3>
-                @if ($item->category)
+        {{-- Show all categories that have items --}}
+        @foreach ($registered_item as $category)
+            <h2 class="font-weight-bold" style="font-size: 24px;">{{ $category->cat_name }}</h2>
+            {{-- Show all sub categories that have items --}}
+            @foreach ($registered_item as $sub_category)
+                @if ($sub_category->cat_id == $category->cat_id)
+                <div class="d-flex justify-content-between ml-5 mb-2">
+                    <h3 class="font-weight-bold" style="font-size: 18px;">{{ $sub_category->sub_name }}</h3>
                     <a href="" class="add-vendor-btn btn btn-sm btn-primary">Daftarkan Vendor</a>
-                @else
-                    <form action="{{ Route('add-item-category', ['id' => $item->id]) }}" method="post">
-                        @csrf
-                        <div class="d-flex justify-content-around align-items-center">
-                            <select name="category" class="add-item-category form-control mx-2" required>
-                                <option value="">Pilih Kategori</option>
-                                @foreach ($item_categories as $category)
-                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                @endforeach
-                            </select>
-                            <select name="sub_category" class="add-item-sub-category form-control mx-2" required>
-                                <option value="">Pilih Sub Kategori</option>
-                            </select>
-                            <button class="btn btn-primary btn-sm">Submit</button>
-                        </div>
-                    </form>
-                @endif
-            </div>
-            @if ($item->category)
+                </div>
+                {{-- Field to add new vendor --}}
                 <div class="add-vendor" style="display: none;">
                     <form action="{{ Route('add-item-vendor') }}" method="POST" class="add-vendor-form">
                         @csrf
                         <div class="d-flex justify-content-start align-items-center mb-3"> 
                             <input type="hidden" name="procurement_id" value="{{ $procurement->id }}">
-                            <input type="hidden" name="item_id" value="{{ $item->id }}">
+                            <input type="hidden" name="sub_cat" value="{{ $sub_category->sub_id }}">
                             <select name="vendor" id="vendor" class="form-control mr-3" style="width: 30%" required>
                                 <option value="" selected>Pilih vendor yang akan ditambahkan</option>
                                 @foreach ($vendors as $vendor)
                                     {{-- Check if there is quotation and vendor exist --}}
                                     @php $vendorExist = false @endphp
-                                    @foreach ($quotations as $quotation)
-                                        @if ($quotation->vendor == $vendor->id) @php $vendorExist = true @endphp @endif
-                                    @endforeach
-                                    @if ($vendor->category == $item->category And $vendor->sub_category == $item->sub_category And !$vendorExist)
-                                        <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
+                                    @if (count($quotations))
+                                        @foreach ($quotations as $quotation)
+                                            @if ($vendor->id == $quotation->vendor And $quotation->item_sub_category == $sub_category->sub_id) @php $vendorExist = true; break; @endphp @endif
+                                        @endforeach
+                                    @endif
+                                    @if ($vendor->sub_category == $sub_category->sub_id And !$vendorExist)
+                                    <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
                                     @endif
                                 @endforeach
                             </select>
@@ -286,205 +340,206 @@
                         </div>
                     </form>
                 </div>
-            @endif
-            <table class="{{ "quotation-$item->id" }} table table-hover table-bordered text-center">
-                <thead>
-                    <tr>
-                        <th style="white-space: nowrap; width: 1%;">#</th>
-                        <th>Nama Vendor</th>
-                        <th class="w-25">Berkas</th>
-                        @if ($role == 'Staf')
-                            <th class="w-25">Action</th>
-                        @endif
-                    </tr>
-                </thead>
-                <tbody>
-                    @php $counter = 1 @endphp
-                    @foreach ($quotations as $quotation)
-                        @if ($quotation->item == $item->id)
+                {{-- Show all vendors registered to correspond sub category --}}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover text-center">
+                        <thead>
                             <tr>
-                                <th style="{{ $quotation->winner ? "background-color: #a6ffad" : "" }}">{{ $counter }}</th>
-                                <td>{{ $quotation->vendor_name }}</td>
-                                <td class="text-left">
-                                    @php $doc_count = 0 @endphp
-                                    @foreach ($vendor_docs as $doc)
-                                        @if ($doc->item == $item->id)
-                                            @php $doc_count += 1 @endphp
-                                        @endif
-                                    @endforeach
-                                    @if ($doc_count)
-                                        <div class="d-flex justify-content-center">
-                                            {{-- Show "SPPH" document badge --}}
-                                            @foreach ($vendor_docs as $doc)
-                                                @if ($doc->vendor == $quotation->vendor And $doc->item == $quotation->item)
-                                                    @if ($doc->type == 'spph')
-                                                        <span class="badge badge-pill badge-primary mx-2">SPPH</span>
-                                                    @endif
-                                                @endif
-                                            @endforeach
-
-                                            {{-- Show "Quotation" document badge --}}
-                                            @if (strlen($quotation->name))
-                                                <span class="badge badge-pill badge-primary mx-2">Penawaran</span>
-                                            @endif
-
-                                            {{-- Show "PO" document badge --}}
-                                            @foreach ($vendor_docs as $doc)
-                                                @if ($doc->vendor == $quotation->vendor And $doc->item == $quotation->item)
-                                                    @if ($doc->type == 'po')
-                                                        <span class="badge badge-pill badge-primary mx-2">PO</span>
-                                                    @endif
-                                                @endif
-                                            @endforeach
-                                        </div>
-                                        <div class="more-document" style="display: none">
-                                            <hr>
-                                            {{-- Show "SPPH" document --}}
-                                            @foreach ($vendor_docs as $doc)
-                                                @if ($doc->vendor == $quotation->vendor And $doc->item == $quotation->item)
-                                                    @if ($doc->type == 'spph')
-                                                        SPPH: <br>
-                                                        <a href="{{ Route('view-document-vendor', ['id' => $doc->id, 'table' => 'vendor_docs']) }}" target="_blank">{{ $doc->name }}</a>
-                                                        <br><br>
-                                                    @endif
-                                                @endif
-                                            @endforeach
-
-                                            {{-- Show "Quotation" document --}}
-                                            @if (strlen($quotation->name))
-                                            Penawaran: <br>
-                                            <a href="{{ Route('view-document-vendor', ['id' => $quotation->id, 'table' => 'vendor_docs']) }}" target="_blank">{{ $quotation->name }}</a>
-                                            <br><br>
-                                            @endif
-
-                                            {{-- Show "PO" document --}}
-                                            @foreach ($vendor_docs as $doc)
-                                                @if ($doc->vendor == $quotation->vendor And $doc->item == $quotation->item)
-                                                    @if ($doc->type == 'po')
-                                                        PO: <br>
-                                                        <a href="{{ Route('view-document-vendor', ['id' => $doc->id, 'table' => 'vendor_docs']) }}" target="_blank">{{ $doc->name }}</a>
-                                                    @endif
-                                                @endif
-                                            @endforeach
-                                        </div>
-                                    @else
-                                        <div class="d-flex justify-content-center">
-                                            <span class="badge badge-danger">Tidak ada berkas</span>
-                                        </div>
-                                    @endif
-                                </td>
+                                <th style="white-space: nowrap; width: 1%;">#</th>
+                                <th>Nama Vendor</th>
+                                <th class="w-25">Berkas</th>
                                 @if ($role == 'Staf')
-                                    <td>
-                                        <div class="d-flex justify-content-center">
-                                            <a href="" class="more-action-btn btn btn-sm btn-primary mx-2">Detail</a>
-                                            {{-- Find any document related to the vendor --}}
-                                            @php $documentExist = false @endphp
-                                            @foreach ($vendor_docs as $doc)
-                                                @if ($doc->item == $item->id And $doc->vendor == $quotation->vendor) 
-                                                    @php $documentExist = true; break; @endphp
-                                                @endif
-                                            @endforeach
-                                            {{-- If no document exist, then show button to delete vendor --}}
-                                            @if (!$documentExist)
-                                                <form action="{{ Route('delete-item-vendor') }}" method="post" class="mx-2">
-                                                    @csrf
-                                                    <input type="hidden" name="id" value="{{ $quotation->id }}">
-                                                    <input type="hidden" name="procurement_id" value="{{ $procurement->id }}">
-                                                    <button class="btn btn-sm btn-danger">Hapus Vendor</button>
-                                                </form>
-                                            @endif
-                                        </div>
-                                        <div class="document-action mt-2" style="display: none">
-                                            <div class="d-flex justify-content-around">
-                                                @php $spphExist = false; $poExist = false @endphp
-                                                @if (count($vendor_docs))
-                                                    @foreach ($vendor_docs as $doc)
-                                                        @if ($doc->vendor == $quotation->vendor And $doc->item == $quotation->item)
-                                                            @if ($doc->type == 'spph') @php $spphExist = true @endphp @endif
-
-                                                            @if ($doc->type == 'po') @php $poExist = true @endphp @endif
-                                                        @endif
-                                                    @endforeach
-                                                @endif
-
-                                                {{-- Count vendor for each item and look for the winner --}}
-                                                @php $quotation_counter = 0; $winner_available = false; @endphp
-                                                @foreach ($quotations as $quotation)
-                                                    @if ($quotation->item == $item->id) @php $quotation_counter += 1 @endphp @endif
-
-                                                    @if ($quotation->winner) @php $winner_available = true @endphp @endif
-                                                @endforeach
-
-                                                {{-- If SPPH not exist, then show button to upload SPPH --}}
-                                                @if (!$spphExist)
-                                                    {{-- If vendor is below minimun, do not allow to create SPPH --}}
-                                                    @if ($quotation_counter >= 5)
-                                                        <a href="{{ Route('generate-spph-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" class="btn btn-sm btn-primary">Generate SPPH</a>
-                                                        <a href="" class="upload-spph btn btn-sm btn-success">Upload SPPH</a>                                                        
-                                                    @else
-                                                        <span class="badge badge-danger">Jumlah vendor masih di bawah minimum (5)</span>                                                        
-                                                    @endif
-                                                @endif
-
-                                                {{-- If SPPH exist and no quoation uploaded, then show button to upload quotation --}}
-                                                @if ($spphExist And !strlen($quotation->name))
-                                                    <a href="" class="upload-quotation btn btn-sm btn-primary">Unggah Penawaran</a>
-                                                @endif
- 
-                                                {{-- If winner is not set --}}
-                                                @if (!$winner_available)
-                                                    {{-- If quotation is available, then show button to choose the winner --}}
-                                                    @if ($quotation->doc !== NULL)
-                                                        <a href="" class="set-winner btn btn-sm btn-primary">Pemenang Tender</a>
-                                                    @endif
-                                                @endif
-                                                
-                                                {{-- If PO not exist and quotation declared as winner --}}
-                                                @if (!$poExist And $quotation->winner)
-                                                    <a href="{{ Route('generate-po-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" class="btn btn-sm btn-primary">Generate PO</a>
-                                                    <a href="" class="upload-po btn btn-sm btn-success">Unggah PO</a>
-                                                @endif
-                                            </div>
-                                            {{-- Form - Upload SPPH --}}
-                                            <form action="{{ Route('upload', ['name' => 'spph']) }}" method="post" enctype="multipart/form-data" class="spph-form mt-2" style="display: none">
-                                                @csrf
-                                                <input type="hidden" name="procurement" value="{{ $procurement->id }}">
-                                                <input type="hidden" name="vendor" value="{{ $quotation->vendor }}">
-                                                <input type="hidden" name="item" value="{{ $item->id }}">
-                                                <input type="text" id="ref" name="ref" class="form-control mb-2" placeholder="Nomor Surat" required>
-                                                <input type="file" name="spph" id="spph" class="form-control-file mb-2" accept="application/pdf" required>
-                                                <button class="btn btn-sm btn-primary">Upload</button>
-                                            </form>
-
-                                            {{-- Form - Upload Quotation --}}
-                                            <form action="{{ Route('upload', ['name' => 'quotation']) }}" method="post" enctype="multipart/form-data" class="quotation-form mt-2" style="display: none">
-                                                @csrf
-                                                <input type="hidden" name="id" value="{{ $quotation->id }}">
-                                                <input type="text" id="ref" name="ref" class="form-control mb-2" placeholder="Nomor Surat" required>
-                                                <input type="file" name="quotation" id="quotation" class="form-control-file mb-2" accept="application/pdf" required>
-                                                <button class="btn btn-sm btn-primary">Upload</button>
-                                            </form>
-
-                                            {{-- Form - Set Tender Winner --}}
-                                            <form action="{{ Route('set-winner') }}" method="post" class="set-winner-form mt-2" style="display: none">
-                                                @csrf
-                                                <input type="hidden" name="id" value="{{ $quotation->id }}">
-                                                <input type="hidden" name="item_id" value="{{ $item->id }}">
-                                                <input type="hidden" name="procurement_id" value="{{ $procurement->id }}">
-                                                <input type="number" name="offering_price" placeholder="Harga Penawaran" class="form-control mt-2">
-                                                <input type="number" name="discount" placeholder="Harga Final" class="form-control mt-2">
-                                                <button class="btn btn-sm btn-success mt-2">Kirim</button>
-                                            </form>
-                                        </div>
-                                    </td>
+                                    <th class="w-25">Action</th>
                                 @endif
                             </tr>
-                            @php $counter += 1 @endphp
-                        @endif
-                    @endforeach
-                </tbody>
-            </table>
-            <hr>
+                        </thead>
+                        <tbody>
+                            @php $counter = 1 @endphp
+                            @foreach ($quotations as $quotation)
+                                @if ($quotation->item_sub_category == $sub_category->sub_id)
+                                    <tr>
+                                        <th style="{{ $quotation->winner ? "background-color: #a6ffad" : "" }}">{{ $counter }}</th>
+                                        <td>{{ $quotation->vendor_name }}</td>
+                                        <td class="text-left">
+                                            @php $doc_count = 0 @endphp
+                                            @foreach ($vendor_docs as $doc)
+                                                @if ($doc->item == $quotation->item)
+                                                    @php $doc_count += 1 @endphp
+                                                @endif
+                                            @endforeach
+                                            @if ($doc_count)
+                                                <div class="d-flex justify-content-center">
+                                                    {{-- Show "SPPH" document badge --}}
+                                                    @foreach ($vendor_docs as $doc)
+                                                        @if ($doc->vendor == $quotation->vendor And $doc->item == $quotation->item)
+                                                            @if ($doc->type == 'spph')
+                                                                <span class="badge badge-pill badge-primary mx-2">SPPH</span>
+                                                            @endif
+                                                        @endif
+                                                    @endforeach
+
+                                                    {{-- Show "Quotation" document badge --}}
+                                                    @if (strlen($quotation->name))
+                                                        <span class="badge badge-pill badge-primary mx-2">Penawaran</span>
+                                                    @endif
+
+                                                    {{-- Show "PO" document badge --}}
+                                                    @foreach ($vendor_docs as $doc)
+                                                        @if ($doc->vendor == $quotation->vendor And $doc->item == $quotation->item)
+                                                            @if ($doc->type == 'po')
+                                                                <span class="badge badge-pill badge-primary mx-2">PO</span>
+                                                            @endif
+                                                        @endif
+                                                    @endforeach
+                                                </div>
+                                                <div class="more-document" style="display: none">
+                                                    <hr>
+                                                    {{-- Show "SPPH" document --}}
+                                                    @foreach ($vendor_docs as $doc)
+                                                        @if ($doc->vendor == $quotation->vendor And $doc->item == $quotation->item)
+                                                            @if ($doc->type == 'spph')
+                                                                SPPH: <br>
+                                                                <a href="{{ Route('view-document-vendor', ['id' => $doc->id, 'table' => 'vendor_docs']) }}" target="_blank">{{ $doc->name }}</a>
+                                                                <br><br>
+                                                            @endif
+                                                        @endif
+                                                    @endforeach
+
+                                                    {{-- Show "Quotation" document --}}
+                                                    @if (strlen($quotation->name))
+                                                    Penawaran: <br>
+                                                    <a href="{{ Route('view-document-vendor', ['id' => $quotation->id, 'table' => 'vendor_docs']) }}" target="_blank">{{ $quotation->name }}</a>
+                                                    <br><br>
+                                                    @endif
+
+                                                    {{-- Show "PO" document --}}
+                                                    @foreach ($vendor_docs as $doc)
+                                                        @if ($doc->vendor == $quotation->vendor And $doc->item == $quotation->item)
+                                                            @if ($doc->type == 'po')
+                                                                PO: <br>
+                                                                <a href="{{ Route('view-document-vendor', ['id' => $doc->id, 'table' => 'vendor_docs']) }}" target="_blank">{{ $doc->name }}</a>
+                                                            @endif
+                                                        @endif
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <div class="d-flex justify-content-center">
+                                                    <span class="badge badge-danger">Tidak ada berkas</span>
+                                                </div>
+                                            @endif
+                                        </td>
+                                        @if ($role == 'Staf')
+                                            <td>
+                                                <div class="d-flex justify-content-center">
+                                                    <a href="" class="more-action-btn btn btn-sm btn-primary mx-2">Detail</a>
+                                                    {{-- Find any document related to the vendor --}}
+                                                    @php $documentExist = false @endphp
+                                                    @foreach ($vendor_docs as $doc)
+                                                        @if ($doc->item == $quotation->item And $doc->vendor == $quotation->vendor) 
+                                                            @php $documentExist = true; break; @endphp
+                                                        @endif
+                                                    @endforeach
+                                                    {{-- If no document exist, then show button to delete vendor --}}
+                                                    @if (!$documentExist)
+                                                        <form action="{{ Route('delete-item-vendor') }}" method="post" class="mx-2">
+                                                            @csrf
+                                                            <input type="hidden" name="id" value="{{ $quotation->id }}">
+                                                            <input type="hidden" name="procurement_id" value="{{ $procurement->id }}">
+                                                            <button class="btn btn-sm btn-danger">Hapus Vendor</button>
+                                                        </form>
+                                                    @endif
+                                                </div>
+                                                <div class="document-action mt-2" style="display: none">
+                                                    <div class="d-flex justify-content-around">
+                                                        @php $spphExist = false; $poExist = false @endphp
+                                                        @if (count($vendor_docs))
+                                                            @foreach ($vendor_docs as $doc)
+                                                                @if ($doc->vendor == $quotation->vendor And $doc->item == $quotation->item)
+                                                                    @if ($doc->type == 'spph') @php $spphExist = true @endphp @endif
+                                                                    @if ($doc->type == 'po') @php $poExist = true @endphp @endif
+                                                                @endif
+                                                            @endforeach
+                                                        @endif
+
+                                                        {{-- Count vendor for each item and look for the winner --}}
+                                                        @php $quotation_counter = 0; $winner_available = false; @endphp
+                                                        @foreach ($quotations as $quotation)
+                                                            @if ($quotation->item_sub_category == $sub_category->sub_id) @php $quotation_counter += 1 @endphp @endif
+
+                                                            @if ($quotation->winner) @php $winner_available = true @endphp @endif
+                                                        @endforeach
+                                                        {{-- If SPPH not exist, then show button to upload SPPH --}}
+                                                        @if (!$spphExist)
+                                                            {{-- If vendor is below minimum, do not allow to create SPPH --}}
+                                                            @if ($quotation_counter >= 5)
+                                                                <a href="{{ Route('generate-spph-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" class="btn btn-sm btn-primary">Generate SPPH</a>
+                                                                <a href="" class="upload-spph btn btn-sm btn-success">Upload SPPH</a>                                                        
+                                                            @else
+                                                                <span class="badge badge-danger">Jumlah vendor masih di bawah minimum (5)</span>                                                        
+                                                            @endif
+                                                        @endif
+
+                                                        {{-- If SPPH exist and no quoation uploaded, then show button to upload quotation --}}
+                                                        @if ($spphExist And !strlen($quotation->name))
+                                                            <a href="" class="upload-quotation btn btn-sm btn-primary">Unggah Penawaran</a>
+                                                        @endif
+
+                                                        {{-- If winner is not set --}}
+                                                        @if (!$winner_available)
+                                                            {{-- If quotation is available, then show button to choose the winner --}}
+                                                            @if ($quotation->doc !== NULL)
+                                                                <a href="" class="set-winner btn btn-sm btn-primary">Pemenang Tender</a>
+                                                            @endif
+                                                        @endif
+                                            
+                                                        {{-- If PO not exist and quotation declared as winner --}}
+                                                        @if (!$poExist And $quotation->winner)
+                                                            <a href="{{ Route('generate-po-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" class="btn btn-sm btn-primary">Generate PO</a>
+                                                            <a href="" class="upload-po btn btn-sm btn-success">Unggah PO</a>
+                                                        @endif
+                                                    </div>
+                                                    {{-- Form - Upload SPPH --}}
+                                                    <form action="{{ Route('upload', ['name' => 'spph']) }}" method="post" enctype="multipart/form-data" class="spph-form mt-2" style="display: none">
+                                                        @csrf
+                                                        <input type="hidden" name="procurement" value="{{ $procurement->id }}">
+                                                        <input type="hidden" name="vendor" value="{{ $quotation->vendor }}">
+                                                        <input type="hidden" name="item" value="{{ $item->id }}">
+                                                        <input type="text" id="ref" name="ref" class="form-control mb-2" placeholder="Nomor Surat" required>
+                                                        <input type="file" name="spph" id="spph" class="form-control-file mb-2" accept="application/pdf" required>
+                                                        <button class="btn btn-sm btn-primary">Upload</button>
+                                                    </form>
+
+                                                    {{-- Form - Upload Quotation --}}
+                                                    <form action="{{ Route('upload', ['name' => 'quotation']) }}" method="post" enctype="multipart/form-data" class="quotation-form mt-2" style="display: none">
+                                                        @csrf
+                                                        <input type="hidden" name="id" value="{{ $quotation->id }}">
+                                                        <input type="text" id="ref" name="ref" class="form-control mb-2" placeholder="Nomor Surat" required>
+                                                        <input type="file" name="quotation" id="quotation" class="form-control-file mb-2" accept="application/pdf" required>
+                                                        <button class="btn btn-sm btn-primary">Upload</button>
+                                                    </form>
+
+                                                    {{-- Form - Set Tender Winner --}}
+                                                    <form action="{{ Route('set-winner') }}" method="post" class="set-winner-form mt-2" style="display: none">
+                                                        @csrf
+                                                        <input type="hidden" name="id" value="{{ $quotation->id }}">
+                                                        <input type="hidden" name="item_id" value="{{ $item->id }}">
+                                                        <input type="hidden" name="procurement_id" value="{{ $procurement->id }}">
+                                                        <input type="number" name="offering_price" placeholder="Harga Penawaran" class="form-control mt-2">
+                                                        <input type="number" name="discount" placeholder="Harga Final" class="form-control mt-2">
+                                                        <button class="btn btn-sm btn-success mt-2">Kirim</button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        @endif
+                                    </tr>
+                                    @php $counter += 1 @endphp
+                                @endif
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @endif
+            @endforeach
         @endforeach
     </div>
 

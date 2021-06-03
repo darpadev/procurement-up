@@ -438,10 +438,7 @@ class ProcurementController extends Controller
         $vendors = \App\Models\Vendor::join('vendor_categories', 'vendor_categories.vendor', '=', 'vendors.id')->select('id', 'name', 'category', 'sub_category')->orderBy('name')->get();
         $category = \App\Models\ProcCategory::select('name')->where('id', '=', $procurement->category)->get();
         $documents = \App\Models\Document::where('procurement', '=', $procurement->id)->get();
-        $items = \App\Models\Item::leftJoin('item_categories', 'item_categories.id', '=', 'items.category')
-            ->leftJoin('item_sub_categories', 'item_sub_categories.id', '=', 'items.sub_category')
-            ->select('items.*')
-            ->where('procurement', '=', $procurement->id)->get();
+        $items = \App\Models\Item::where('procurement', '=', $procurement->id)->get();
         $registered_item = \App\Models\Item::join('item_categories', 'item_categories.id', '=', 'items.category')
                                 ->join('item_sub_categories', 'item_sub_categories.id', '=', 'items.sub_category')
                                 ->select('items.category AS cat_id', 'items.sub_category AS sub_id', 'item_categories.name AS cat_name', 'item_sub_categories.name AS sub_name')
@@ -449,7 +446,7 @@ class ProcurementController extends Controller
                                 ->distinct()->get();
         $pic = \App\Models\User::select('name')->where('id', '=', $procurement->pic)->get();
         $priority = \App\Models\Priority::select('name')->where('id', '=', $procurement->priority)->get();
-
+        // dd($registered_item);
         return view('procurement.my.show', [
             'category' => $category,
             'documents' => $documents,

@@ -104,6 +104,25 @@ $(document).ready(function(){
         })
     })
 
+    let add_item_category_btn = $('.add-item-category-btn')
+    let add_item_category_form = $('.add-item-category-form')
+
+    $(add_item_category_btn).each(index => {
+        $(add_item_category_btn[index]).on('click', function(event){
+            if($(add_item_category_btn[index]).hasClass('btn-primary')){
+                $(add_item_category_btn[index]).removeClass('btn-primary')
+                $(add_item_category_btn[index]).addClass('btn-danger')
+                $(add_item_category_btn[index]).html('&times;')
+            }else{
+                $(add_item_category_btn[index]).removeClass('btn-danger')
+                $(add_item_category_btn[index]).addClass('btn-primary')
+                $(add_item_category_btn[index]).html('Tambahkan Kategori')
+            }
+            $(add_item_category_form[index]).slideToggle();
+            event.preventDefault()
+        })
+    })
+    
     let upload_spph = $('.upload-spph')
     let spph_form = $('.spph-form')
 
