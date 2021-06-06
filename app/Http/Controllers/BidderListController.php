@@ -21,12 +21,14 @@ class BidderListController extends Controller
                 'vendors.*',
                 'vendor_trecords.name AS trecord'
                 )
+            ->orderBy('vendors.name')
             ->distinct()
             ->paginate(25);
         $list_categories = \App\Models\ItemCategory::select('id', 'name')->orderBy('name')->get();
         $vendors_unknown = \App\Models\Vendor::leftJoin('vendor_categories', 'vendor_categories.vendor', '=', 'vendors.id')
             ->select('vendors.*')
             ->whereNull('vendor_categories.vendor')
+            ->orderBy('vendors.name')
             ->get();
         $vendor_categories = \App\Models\VendorCategory::join('item_categories', 'item_categories.id', '=', 'vendor_categories.category')
             ->join('item_sub_categories', 'item_sub_categories.id', '=', 'vendor_categories.sub_category')
