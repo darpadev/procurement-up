@@ -512,7 +512,7 @@
                                                         @csrf
                                                         <input type="hidden" name="procurement" value="{{ $procurement->id }}">
                                                         <input type="hidden" name="vendor" value="{{ $quotation->vendor }}">
-                                                        <input type="hidden" name="item" value="{{ $item->id }}">
+                                                        <input type="hidden" name="sub_category" value="{{ $sub_category->sub_id }}">
                                                         <input type="text" id="ref" name="ref" class="form-control mb-2" placeholder="Nomor Surat" required>
                                                         <input type="file" name="spph" id="spph" class="form-control-file mb-2" accept="application/pdf" required>
                                                         <button class="btn btn-sm btn-primary">Upload</button>

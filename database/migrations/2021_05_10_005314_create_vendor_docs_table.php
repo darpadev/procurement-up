@@ -17,7 +17,7 @@ class CreateVendorDocsTable extends Migration
             $table->id();
             $table->foreignId('procurement')->constrained('procurements');
             $table->foreignId('vendor')->constrained('vendors');
-            $table->foreignId('item')->constrained('items');
+            $table->foreignId('item_sub_category')->constrained('item_sub_categories');
             $table->string('name')->nullable();
             $table->string('type')->nullable();
             $table->string('doc_type')->nullable();

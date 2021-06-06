@@ -35,6 +35,7 @@ class DocumentController extends Controller
 
             $stmt->execute();
         }elseif ($name == 'spph'){
+            dd($request->all());
             $procurement = $request->procurement;
             $vendor = $request->vendor;
             $item = $request->item;
