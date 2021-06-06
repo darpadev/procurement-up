@@ -25,8 +25,9 @@ function dateIDN($date){
     return $day . " " . $month . " " . $year;
 }
 
-function futureDate($date, int $day){
-
+function futureDate(int $day){
+    $date = dateIDN(date('Ymd', strtotime("+$day days")));
+    return $date;
 }
 
 ?>
