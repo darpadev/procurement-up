@@ -88,7 +88,7 @@ class DocumentController extends Controller
                     ->get();
         $proc_manager = \App\Models\User::join('roles', 'roles.id', '=', 'users.role')
             ->join('units', 'units.id', '=', 'users.unit')
-            ->select('users.email')
+            ->select('users.name', 'users.email', 'roles.name AS role', 'units.name AS unit')
             ->where('roles.name', '=', 'Manajer')
             ->where('units.name', '=', 'Fungsi Pengadaan Barang dan Jasa')
             ->first();
@@ -218,7 +218,7 @@ class DocumentController extends Controller
                 </li>
                 <li>
                     Perusahaan yang telah menerima surat undangan resmi ini diberikan waktu untuk mengirimkan penawaran
-                    sampai dengan tanggal <span style='$font_bold'>$day_deadline</span>
+                    sampai dengan tanggal <span style='$font_bold'>" . futureDate(14) . "</span>
                 </li>
                 <li>
                     Surat permohonan penawaran dalam bentuk <span style='$font_italic'>softcopy</span> dapat dikirimkan ke alamat email:
@@ -233,6 +233,20 @@ class DocumentController extends Controller
             "<p style='$text_justify $font_size_body'>
                 Demikian surat undangan ini kami sampaikan, atas perhatian dan kerja samanya kami ucapkan terima kasih.
             </p>"
+        );
+
+        $mpdf->WriteHTML(
+            "
+            <p style='$font_size_body $font_bold'>
+                $proc_manager->role $proc_manager->unit
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
+                $proc_manager->name
+            </p>
+            "
         );
 
         $mpdf->AddPageByArray(['type' => '']);
