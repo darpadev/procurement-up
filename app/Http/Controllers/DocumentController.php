@@ -38,7 +38,7 @@ class DocumentController extends Controller
             dd($request->all());
             $procurement = $request->procurement;
             $vendor = $request->vendor;
-            $item = $request->item;
+            $item = $request->item_sub_category;
             $type = $name;
 
             $stmt = $pdo->prepare("INSERT INTO vendor_docs VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
