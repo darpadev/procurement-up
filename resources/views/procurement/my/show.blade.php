@@ -8,7 +8,7 @@
     <h3 class="mb-2 font-weight-bold">Current Status: <span class="badge badge-pill badge-primary p-2">{{ $procurement->status_name }}</span></h3>
     <div class="d-flex justify-content-between align-items-start mb-2">
         <p>Last Update: @php echo date('d F Y - H:i:s', strtotime($procurement->updated_at)) @endphp</p>
-        @if ($role == 'Staf' And $unit->name == 'Fungsi Pengadaan Barang dan Jasa' Or ($procurement->applicant == Auth::user()->id And $procurement->editable))
+        @if ($role == 'Staf' And $procurement->pic != NULL Or ($procurement->applicant == Auth::user()->id And $procurement->editable))
             <a href="{{ Route('edit-procurement', ['id' => $procurement->id]) }}" class="btn btn-warning font-weight-bold text-dark">Edit</a>
         @endif
     </div>
@@ -348,7 +348,7 @@
                                 <th style="white-space: nowrap; width: 1%;">#</th>
                                 <th>Nama Vendor</th>
                                 <th class="w-25">Berkas</th>
-                                @if ($role == 'Staf')
+                                @if ($role == 'Staf' And $procurement->pic != NULL)
                                     <th class="w-25">Action</th>
                                 @endif
                             </tr>
@@ -433,7 +433,7 @@
                                             @endif
                                         </td>
                                         {{-- End of available documents on correspons vendor --}}
-                                        @if ($role == 'Staf')
+                                        @if ($role == 'Staf' And $procurement->pic != NULL)
                                             <td>
                                                 <div class="d-flex justify-content-center">
                                                     <a href="" class="more-action-btn btn btn-sm btn-primary mx-2">Detail</a>
