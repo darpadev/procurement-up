@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Auth;
 use PDO;
 
 class DocumentController extends Controller
@@ -35,10 +36,9 @@ class DocumentController extends Controller
 
             $stmt->execute();
         }elseif ($name == 'spph'){
-            dd($request->all());
             $procurement = $request->procurement;
             $vendor = $request->vendor;
-            $item = $request->item_sub_category;
+            $item = $request->sub_category;
             $type = $name;
 
             $stmt = $pdo->prepare("INSERT INTO vendor_docs VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -54,9 +54,19 @@ class DocumentController extends Controller
 
             $stmt->execute();
 
+            $vendor = \App\Models\Vendor::select('name')->where('id', '=', $request->vendor)->first();
+
+            $log = new \App\Models\ProcLog;
+
+            $log->procurement   = $procurement;
+            $log->message       = "SPPH untuk $vendor->name berhasil diunggah";
+            $log->sender        = Auth::user()->id;
+
+            $log->save();
+
             $proc = \App\Models\Procurement::find($procurement);
-            $new_status = \App\Models\Status::select('id')->where('name', '=', 'SPPH')->get()[0];
-            $proc->status = $new_status->id;
+            $new_status     = \App\Models\Status::select('id')->where('name', '=', 'SPPH')->get()[0];
+            $proc->status   = $new_status->id;
 
             $proc->save();
         }

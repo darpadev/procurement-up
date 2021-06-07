@@ -348,7 +348,7 @@
                                 <th style="white-space: nowrap; width: 1%;">#</th>
                                 <th>Nama Vendor</th>
                                 <th class="w-25">Berkas</th>
-                                @if ($role == 'Staf' And $procurement->pic != NULL)
+                                @if (($role == 'Staf' And $procurement->pic != NULL) Or (Auth::user()->id == $procurement->applicant))
                                     <th class="w-25">Action</th>
                                 @endif
                             </tr>
@@ -433,7 +433,7 @@
                                             @endif
                                         </td>
                                         {{-- End of available documents on correspons vendor --}}
-                                        @if ($role == 'Staf' And $procurement->pic != NULL)
+                                        @if (($role == 'Staf' And $procurement->pic != NULL) Or (Auth::user()->id == $procurement->applicant))
                                             <td>
                                                 <div class="d-flex justify-content-center">
                                                     <a href="" class="more-action-btn btn btn-sm btn-primary mx-2">Detail</a>
@@ -508,35 +508,41 @@
                                                         @endif
                                                     </div>
                                                     {{-- Form - Upload SPPH --}}
-                                                    <form action="{{ Route('upload', ['name' => 'spph']) }}" method="post" enctype="multipart/form-data" class="spph-form mt-2" style="display: none">
-                                                        @csrf
-                                                        <input type="hidden" name="procurement" value="{{ $procurement->id }}">
-                                                        <input type="hidden" name="vendor" value="{{ $quotation->vendor }}">
-                                                        <input type="hidden" name="sub_category" value="{{ $sub_category->sub_id }}">
-                                                        <input type="text" id="ref" name="ref" class="form-control mb-2" placeholder="Nomor Surat" required>
-                                                        <input type="file" name="spph" id="spph" class="form-control-file mb-2" accept="application/pdf" required>
-                                                        <button class="btn btn-sm btn-primary">Upload</button>
-                                                    </form>
+                                                    @if (!$spphExist)                                                        
+                                                        <form action="{{ Route('upload', ['name' => 'spph']) }}" method="post" enctype="multipart/form-data" class="spph-form mt-2" style="display: none">
+                                                            @csrf
+                                                            <input type="hidden" name="procurement" value="{{ $procurement->id }}">
+                                                            <input type="hidden" name="vendor" value="{{ $quotation->vendor }}">
+                                                            <input type="hidden" name="sub_category" value="{{ $sub_category->sub_id }}">
+                                                            <input type="text" id="ref" name="ref" class="form-control mb-2" placeholder="Nomor Surat" required>
+                                                            <input type="file" name="spph" id="spph" class="form-control-file mb-2" accept="application/pdf" required>
+                                                            <button class="btn btn-sm btn-primary">Upload</button>
+                                                        </form>
+                                                    @endif
 
-                                                    {{-- Form - Upload Quotation --}}
-                                                    <form action="{{ Route('upload', ['name' => 'quotation']) }}" method="post" enctype="multipart/form-data" class="quotation-form mt-2" style="display: none">
-                                                        @csrf
-                                                        <input type="hidden" name="id" value="{{ $quotation->id }}">
-                                                        <input type="text" id="ref" name="ref" class="form-control mb-2" placeholder="Nomor Surat" required>
-                                                        <input type="file" name="quotation" id="quotation" class="form-control-file mb-2" accept="application/pdf" required>
-                                                        <button class="btn btn-sm btn-primary">Upload</button>
-                                                    </form>
+                                                    @if ($spphExist And !strlen($quotation->name))                                                        
+                                                        {{-- Form - Upload Quotation --}}
+                                                        <form action="{{ Route('upload', ['name' => 'quotation']) }}" method="post" enctype="multipart/form-data" class="quotation-form mt-2" style="display: none">
+                                                            @csrf
+                                                            <input type="hidden" name="id" value="{{ $quotation->id }}">
+                                                            <input type="text" id="ref" name="ref" class="form-control mb-2" placeholder="Nomor Surat" required>
+                                                            <input type="file" name="quotation" id="quotation" class="form-control-file mb-2" accept="application/pdf" required>
+                                                            <button class="btn btn-sm btn-primary">Upload</button>
+                                                        </form>
+                                                    @endif
 
-                                                    {{-- Form - Set Tender Winner --}}
-                                                    <form action="{{ Route('set-winner') }}" method="post" class="set-winner-form mt-2" style="display: none">
-                                                        @csrf
-                                                        <input type="hidden" name="id" value="{{ $quotation->id }}">
-                                                        <input type="hidden" name="item_id" value="{{ $item->id }}">
-                                                        <input type="hidden" name="procurement_id" value="{{ $procurement->id }}">
-                                                        <input type="number" name="offering_price" placeholder="Harga Penawaran" class="form-control mt-2">
-                                                        <input type="number" name="discount" placeholder="Harga Final" class="form-control mt-2">
-                                                        <button class="btn btn-sm btn-success mt-2">Kirim</button>
-                                                    </form>
+                                                    @if (!$winner_available)                                                        
+                                                        {{-- Form - Set Tender Winner --}}
+                                                        <form action="{{ Route('set-winner') }}" method="post" class="set-winner-form mt-2" style="display: none">
+                                                            @csrf
+                                                            <input type="hidden" name="id" value="{{ $quotation->id }}">
+                                                            <input type="hidden" name="item_id" value="{{ $item->id }}">
+                                                            <input type="hidden" name="procurement_id" value="{{ $procurement->id }}">
+                                                            <input type="number" name="offering_price" placeholder="Harga Penawaran" class="form-control mt-2">
+                                                            <input type="number" name="discount" placeholder="Harga Final" class="form-control mt-2">
+                                                            <button class="btn btn-sm btn-success mt-2">Kirim</button>
+                                                        </form>
+                                                    @endif
                                                 </div>
                                             </td>
                                         @endif
