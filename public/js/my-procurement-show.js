@@ -158,7 +158,6 @@ $(document).ready(function(){
                 $(more_action_btn[index]).removeClass('btn-primary')
                 $(more_action_btn[index]).addClass('btn-danger')
             }
-            console.log($(document_action[index]))
             $(document_action[index]).slideToggle()
             $(more_document[index]).slideToggle()
 
@@ -166,14 +165,12 @@ $(document).ready(function(){
         })
     })
 
-    let set_winner = $('.set-winner')
-    let set_winner_form = $('.set-winner-form')
+    let bapp_button = $('#upload-bapp')
+    let bapp_form   = $('#upload-bapp-form')
 
-    $(set_winner).each(index => {
-        $(set_winner[index]).on('click', function(event){
-            $(set_winner_form[index]).slideToggle()
+    $(bapp_button).on('click', function(event){
+        $(bapp_form).slideToggle()
 
-            event.preventDefault()
-        })
+        event.preventDefault()
     })
 })

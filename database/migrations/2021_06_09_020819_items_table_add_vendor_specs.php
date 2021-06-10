@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 
-class UpdateItemTable extends Migration
+class ItemsTableAddVendorSpecs extends Migration
 {
     /**
      * Run the migrations.
@@ -13,7 +13,7 @@ class UpdateItemTable extends Migration
      */
     public function up()
     {
-        DB::STATEMENT('ALTER TABLE `items` CHANGE `nego_price` `discount` INT(11) NULL DEFAULT NULL');
+        DB::STATEMENT('ALTER TABLE items ADD vendor_specs TEXT NULL AFTER specs');
     }
 
     /**

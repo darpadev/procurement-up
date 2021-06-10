@@ -65,63 +65,71 @@
             </div>
             <div class="col-md-6 mb-3">
                 <label for="tor" class="form-label font-weight-bold">ToR</label>
+                @php $tor_available = false @endphp
                 @foreach ($documents as $doc)
                     @if ($doc->type == 'tor')
+                        @php $tor_available = true @endphp
                         <div class="d-flex justify-content-between align-items-baseline">
                             <a href="{{ Route('view-document', ['id' => $doc->id]) }}" target="_blank" id="tor">{{ $doc->name }}</a>
                             <a class="btn btn-sm btn-primary" href="{{ Route('view-document', ['id' => $doc->id]) }}" target="_blank">Download</a>
                         </div>                        
-                    @else
-                        <br>
-                        <p class="p-2 badge badge-pill badge-danger" id="tor">Not Available</p>                        
                     @endif
                 @endforeach
+                @if (!$tor_available)
+                    <br>
+                    <p class="p-2 badge badge-pill badge-danger" id="tor">Not Available</p>                        
+                @endif
             </div>
             <div class="col-md-6 mb-3">
                 <label for="spec" class="form-label font-weight-bold">Specs</label>
+                @php $spec_available = false @endphp
                 @foreach ($documents as $doc)
                     @if ($doc->type == 'spec')
+                        @php $spec_available = true @endphp
                         <div class="d-flex justify-content-between align-items-start">
                             <a href="{{ Route('view-document', ['id' => $doc->id]) }}" target="_blank" id="spec">{{ $doc->name }}</a>
                             <a class="btn btn-sm btn-primary" href="{{ Route('view-document', ['id' => $doc->id]) }}" target="_blank">Download</a>
-                        </div>
-                    @else
-                        <br>
-                        <p class="p-2 badge badge-pill badge-danger" id="spec">Not Available</p>
+                        </div>                        
                     @endif
-                @endforeach                    
+                @endforeach
+                @if (!$spec_available)
+                    <br>
+                    <p class="p-2 badge badge-pill badge-danger" id="spec">Not Available</p>                        
+                @endif                  
             </div>
             <div class="col-md-6 mb-3">
                 <label for="bapp" class="form-label font-weight-bold">BAPP - Berita Acara Penjunjukan Pemenang</label>
+                @php $bapp_available = false @endphp
                 @foreach ($documents as $doc)
+                    @php $bapp_available = true @endphp
                     @if ($doc->type == 'bapp')
-                        <div class="col-md-6 mb-3">
-                            <div class="d-flex justify-content-between">
-                                <a href="{{ Route('view-document', ['id' => $doc->id]) }}" target="_blank" id="bapp">{{ $doc->name }}</a>
-                                <a class="btn btn-sm btn-primary" href="{{ Route('view-document', ['id' => $doc->id]) }}" target="_blank">Download</a>
-                            </div>
+                        <div class="d-flex justify-content-between align-items-baseline">
+                            <a href="{{ Route('view-document', ['id' => $doc->id]) }}" target="_blank" id="bapp">{{ $doc->name }}</a>
+                            <a class="btn btn-sm btn-primary" href="{{ Route('view-document', ['id' => $doc->id]) }}" target="_blank">Download</a>
                         </div>
-                    @else
-                        <br>
-                        <p class="p-2 badge badge-pill badge-danger" id="bapp">Not Available</p>
                     @endif
                 @endforeach
+                @if (!$bapp_available)
+                    <br>
+                    <p class="p-2 badge badge-pill badge-danger" id="bapp">Not Available</p>                        
+                @endif
             </div>
             <div class="col-md-6 mb-3">
                 <label for="bast" class="form-label font-weight-bold">BAST - Berita Acara Serah Terima</label>
+                @php $bast_available = false @endphp
                 @foreach ($documents as $doc)
+                    @php $bast_available = true @endphp
                     @if ($doc->type == 'bast')
-                        <div class="col-md-6 mb-3">
-                            <div class="d-flex justify-content-between">
-                                <a href="{{ Route('view-document', ['id' => $doc->id]) }}" target="_blank" id="bast">{{ $doc->name }}</a>
-                                <a class="btn btn-sm btn-primary" href="{{ Route('view-document', ['id' => $doc->id]) }}" target="_blank">Download</a>
-                            </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ Route('view-document', ['id' => $doc->id]) }}" target="_blank" id="bast">{{ $doc->name }}</a>
+                            <a class="btn btn-sm btn-primary" href="{{ Route('view-document', ['id' => $doc->id]) }}" target="_blank">Download</a>
                         </div>
-                    @else
-                        <br>
-                        <p class="p-2 badge badge-pill badge-danger" id="bast">Not Available</p>
                     @endif
                 @endforeach
+                @if (!$bast_available)
+                    <br>
+                    <p class="p-2 badge badge-pill badge-danger" id="bast">Not Available</p>                        
+                @endif
             </div>
         </div>
         @if ($procurement->approver == Auth::user()->role)
@@ -152,8 +160,33 @@
                         <button class="btn btn-primary" name="approve">Disposisi</button>
                     @elseif ($role != 'Staf')
                         <button class="btn btn-primary" name="approve">Approve</button>
+                    @elseif ($role == 'Staf')
+                        @php $winner_available = false @endphp
+                        @foreach ($quotations as $item)
+                            @if ($item->winner) @php $winner_available = true @endphp @endif
+                        @endforeach
                     @endif
                 </form>
+                @if ($winner_available And $procurement->status_name == "Tender Evaluation" And $role = 'Staf')
+                    <div class="w-75">
+                        <div class="row justify-content-center mb-3">
+                            <a href="" class="btn btn-primary col-md-auto" id="upload-bapp">Unggah BAPP</a>
+                        </div>
+                        <div id="upload-bapp-form" style="display: none">
+                            <form action="{{ Route('upload', ['name' => 'bapp']) }}" method="post" enctype="multipart/form-data">
+                                @csrf
+                                <div class="row justify-content-center align-items-center mb-2">
+                                    <input type="hidden" name="procurement" value="{{ $procurement->id }}">
+                                    <input type="text" name="ref" class="form-control col" placeholder="Nomor Surat">
+                                    <input type="file" name="bapp" class="form-control-file col">
+                                </div>
+                                <div class="row justify-content-center">
+                                    <button class="btn btn-success col-md-auto">Upload</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                @endif
             </div>
         @endif
     </div>
@@ -365,7 +398,7 @@
                                             @php $doc_count = 0 @endphp
                                             {{-- Count for available documents --}}
                                             @foreach ($vendor_docs as $doc)
-                                                @if ($doc->item == $quotation->item)
+                                                @if ($doc->item_sub_category == $quotation->item_sub_category And $doc->vendor == $quotation->vendor)
                                                     @php $doc_count += 1 @endphp
                                                 @endif
                                             @endforeach
@@ -374,7 +407,7 @@
                                                 <div class="d-flex justify-content-center">
                                                     {{-- Show "SPPH" document badge --}}
                                                     @foreach ($vendor_docs as $doc)
-                                                        @if ($doc->vendor == $quotation->vendor And $doc->item == $quotation->item)
+                                                        @if ($doc->vendor == $quotation->vendor And $doc->item_sub_category == $quotation->item_sub_category)
                                                             @if ($doc->type == 'spph')
                                                                 <span class="badge badge-pill badge-primary mx-2">SPPH</span>
                                                             @endif
@@ -399,7 +432,7 @@
                                                     <hr>
                                                     {{-- Show "SPPH" document --}}
                                                     @foreach ($vendor_docs as $doc)
-                                                        @if ($doc->vendor == $quotation->vendor And $doc->item == $quotation->item)
+                                                        @if ($doc->vendor == $quotation->vendor And $doc->item_sub_category == $quotation->item_sub_category)
                                                             @if ($doc->type == 'spph')
                                                                 SPPH: <br>
                                                                 <a href="{{ Route('view-document-vendor', ['id' => $doc->id, 'table' => 'vendor_docs']) }}" target="_blank">{{ $doc->name }}</a>
@@ -411,7 +444,7 @@
                                                     {{-- Show "Quotation" document --}}
                                                     @if (strlen($quotation->name))
                                                         Penawaran: <br>
-                                                        <a href="{{ Route('view-document-vendor', ['id' => $quotation->id, 'table' => 'vendor_docs']) }}" target="_blank">{{ $quotation->name }}</a>
+                                                        <a href="{{ Route('view-document-vendor', ['id' => $quotation->id, 'table' => 'quotations', 'proc_id' => $procurement->id]) }}" target="_blank">{{ $quotation->name }}</a>
                                                         <br><br>
                                                     @endif
 
@@ -427,7 +460,7 @@
                                                 </div>
                                             {{-- If no document exist, show the following badge --}}
                                             @else
-                                                <div class="d-flex justify-content-center">
+                                                <div class="more-document d-flex justify-content-center" style="display: none">
                                                     <span class="badge badge-danger">Tidak ada berkas</span>
                                                 </div>
                                             @endif
@@ -440,7 +473,7 @@
                                                     {{-- Find any document related to the vendor --}}
                                                     @php $documentExist = false @endphp
                                                     @foreach ($vendor_docs as $doc)
-                                                        @if ($doc->item == $quotation->item And $doc->vendor == $quotation->vendor) 
+                                                        @if ($doc->item_sub_category == $quotation->item_sub_category And $doc->vendor == $quotation->vendor) 
                                                             @php $documentExist = true; break; @endphp
                                                         @endif
                                                     @endforeach
@@ -456,92 +489,95 @@
                                                 </div>
                                                 <div class="document-action mt-2" style="display: none">
                                                     <div class="d-flex justify-content-around">
-                                                        {{-- Find for SPPH and PO --}}
-                                                        @php $spphExist = false; $poExist = false @endphp
-                                                        @if (count($vendor_docs))
-                                                            @foreach ($vendor_docs as $doc)
-                                                                @if ($doc->vendor == $quotation->vendor And $doc->item == $quotation->item)
-                                                                    @if ($doc->type == 'spph') @php $spphExist = true @endphp @endif
-                                                                    @if ($doc->type == 'po') @php $poExist = true @endphp @endif
-                                                                @endif
+                                                        @if($role == 'Staf')
+                                                            {{-- Find for SPPH and PO --}}
+                                                            @php $spphExist = false; $poExist = false @endphp
+                                                            @if (count($vendor_docs))
+                                                                @foreach ($vendor_docs as $doc)
+                                                                    @if ($doc->vendor == $quotation->vendor And $doc->item_sub_category == $quotation->item_sub_category)
+                                                                        @if ($doc->type == 'spph') @php $spphExist = true @endphp @endif
+                                                                        @if ($doc->type == 'po') @php $poExist = true @endphp @endif
+                                                                    @endif
+                                                                @endforeach
+                                                            @endif
+                                                            {{-- End of find for SPPH and PO --}}
+
+                                                            {{-- Count vendor for each item --}}
+                                                            @php $quotation_counter = 0; @endphp
+                                                            @foreach ($quotations as $item)
+                                                                @if ($item->item_sub_category == $sub_category->sub_id) @php $quotation_counter += 1 @endphp @endif
                                                             @endforeach
-                                                        @endif
-                                                        {{-- End of find for SPPH and PO --}}
+                                                            {{-- End of count vendor for each item --}}
 
-                                                        {{-- Count vendor for each item and look for the winner --}}
-                                                        @php $quotation_counter = 0; $winner_available = false; @endphp
-                                                        @foreach ($quotations as $item)
-                                                            @if ($item->item_sub_category == $sub_category->sub_id) @php $quotation_counter += 1 @endphp @endif
+                                                            {{-- If SPPH not exist, then show button to upload SPPH --}}
+                                                            @if (!$spphExist)
+                                                                {{-- If vendor is below minimum, do not allow to create SPPH --}}
+                                                                @if ($quotation_counter >= 5)
+                                                                    <a href="{{ Route('generate-spph-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" class="btn btn-sm btn-primary">Generate SPPH</a>
+                                                                    <a href="" class="upload-spph btn btn-sm btn-success">Upload SPPH</a>                                                        
+                                                                @else
+                                                                    <span class="badge badge-danger">Jumlah vendor masih di bawah minimum (5)</span>                                                        
+                                                                @endif
+                                                            @endif
 
-                                                            @if ($item->winner) @php $winner_available = true @endphp @endif
-                                                        @endforeach
-                                                        {{-- End of count vendor for each item and look for the winner --}}
-
-                                                        {{-- If SPPH not exist, then show button to upload SPPH --}}
-                                                        @if (!$spphExist)
-                                                            {{-- If vendor is below minimum, do not allow to create SPPH --}}
-                                                            @if ($quotation_counter >= 5)
-                                                                <a href="{{ Route('generate-spph-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" class="btn btn-sm btn-primary">Generate SPPH</a>
-                                                                <a href="" class="upload-spph btn btn-sm btn-success">Upload SPPH</a>                                                        
-                                                            @else
-                                                                <span class="badge badge-danger">Jumlah vendor masih di bawah minimum (5)</span>                                                        
+                                                            {{-- If SPPH exist and no quoation uploaded, then show button to upload quotation --}}
+                                                            @if ($spphExist And !strlen($quotation->name))
+                                                                <a href="" class="upload-quotation btn btn-sm btn-primary">Unggah Penawaran</a>
                                                             @endif
                                                         @endif
 
-                                                        {{-- If SPPH exist and no quoation uploaded, then show button to upload quotation --}}
-                                                        @if ($spphExist And !strlen($quotation->name))
-                                                            <a href="" class="upload-quotation btn btn-sm btn-primary">Unggah Penawaran</a>
+                                                        {{-- If quotation is available, then show button to choose the winner --}}
+                                                        @if ($quotation->doc !== NULL And $procurement->status_name == 'Tender Evaluation' And Auth::user()->id == $procurement->applicant And !$quotation->winner)
+                                                            <div class="f-flex justify-content-between">
+                                                                @if($quotation->isSuitable)
+                                                                    <a href="{{ Route('set-not-suitable', ['procurement' => $procurement->id, 'vendor' => $quotation->vendor]) }}" class="btn btn-sm btn-danger">
+                                                                        Tidak Sesuai
+                                                                    </a>
+                                                                    <a 
+                                                                        href="{{ Route('set-winner-form', [
+                                                                            'procurement' => $procurement->id, 
+                                                                            'vendor' => $quotation->vendor]) 
+                                                                            }}" 
+                                                                        class="set-winner btn btn-sm btn-primary">
+                                                                            Pemenang Tender
+                                                                    </a>
+                                                                @endif
+                                                            </div>
                                                         @endif
-
-                                                        {{-- If winner is not set --}}
-                                                        @if (!$winner_available)
-                                                            {{-- If quotation is available, then show button to choose the winner --}}
-                                                            @if ($quotation->doc !== NULL)
-                                                                <a href="" class="set-winner btn btn-sm btn-primary">Pemenang Tender</a>
+                                                        
+                                                        @if($role == 'Staf')
+                                                            {{-- If PO not exist and quotation declared as winner --}}
+                                                            @if (!$poExist And $quotation->winner)
+                                                                <a href="{{ Route('generate-po-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" class="btn btn-sm btn-primary">Generate PO</a>
+                                                                <a href="" class="upload-po btn btn-sm btn-success">Unggah PO</a>
                                                             @endif
-                                                        @endif
-                                            
-                                                        {{-- If PO not exist and quotation declared as winner --}}
-                                                        @if (!$poExist And $quotation->winner)
-                                                            <a href="{{ Route('generate-po-form', ['proc_id' => $procurement->id, 'vendor_id' => $quotation->vendor]) }}" class="btn btn-sm btn-primary">Generate PO</a>
-                                                            <a href="" class="upload-po btn btn-sm btn-success">Unggah PO</a>
                                                         @endif
                                                     </div>
-                                                    {{-- Form - Upload SPPH --}}
-                                                    @if (!$spphExist)                                                        
-                                                        <form action="{{ Route('upload', ['name' => 'spph']) }}" method="post" enctype="multipart/form-data" class="spph-form mt-2" style="display: none">
-                                                            @csrf
-                                                            <input type="hidden" name="procurement" value="{{ $procurement->id }}">
-                                                            <input type="hidden" name="vendor" value="{{ $quotation->vendor }}">
-                                                            <input type="hidden" name="sub_category" value="{{ $sub_category->sub_id }}">
-                                                            <input type="text" id="ref" name="ref" class="form-control mb-2" placeholder="Nomor Surat" required>
-                                                            <input type="file" name="spph" id="spph" class="form-control-file mb-2" accept="application/pdf" required>
-                                                            <button class="btn btn-sm btn-primary">Upload</button>
-                                                        </form>
-                                                    @endif
+                                                    @if($role == 'Staf')
+                                                        {{-- Form - Upload SPPH --}}
+                                                        @if (!$spphExist)                                                        
+                                                            <form action="{{ Route('upload', ['name' => 'spph']) }}" method="post" enctype="multipart/form-data" class="spph-form mt-2" style="display: none">
+                                                                @csrf
+                                                                <input type="hidden" name="procurement" value="{{ $procurement->id }}">
+                                                                <input type="hidden" name="vendor" value="{{ $quotation->vendor }}">
+                                                                <input type="hidden" name="sub_category" value="{{ $sub_category->sub_id }}">
+                                                                <input type="text" id="ref" name="ref" class="form-control mb-2" placeholder="Nomor Surat" required>
+                                                                <input type="file" name="spph" id="spph" class="form-control-file mb-2" accept="application/pdf" required>
+                                                                <button class="btn btn-sm btn-primary">Upload</button>
+                                                            </form>
+                                                        @endif
 
-                                                    @if ($spphExist And !strlen($quotation->name))                                                        
-                                                        {{-- Form - Upload Quotation --}}
-                                                        <form action="{{ Route('upload', ['name' => 'quotation']) }}" method="post" enctype="multipart/form-data" class="quotation-form mt-2" style="display: none">
-                                                            @csrf
-                                                            <input type="hidden" name="id" value="{{ $quotation->id }}">
-                                                            <input type="text" id="ref" name="ref" class="form-control mb-2" placeholder="Nomor Surat" required>
-                                                            <input type="file" name="quotation" id="quotation" class="form-control-file mb-2" accept="application/pdf" required>
-                                                            <button class="btn btn-sm btn-primary">Upload</button>
-                                                        </form>
-                                                    @endif
-
-                                                    @if (!$winner_available)                                                        
-                                                        {{-- Form - Set Tender Winner --}}
-                                                        <form action="{{ Route('set-winner') }}" method="post" class="set-winner-form mt-2" style="display: none">
-                                                            @csrf
-                                                            <input type="hidden" name="id" value="{{ $quotation->id }}">
-                                                            <input type="hidden" name="item_id" value="{{ $item->id }}">
-                                                            <input type="hidden" name="procurement_id" value="{{ $procurement->id }}">
-                                                            <input type="number" name="offering_price" placeholder="Harga Penawaran" class="form-control mt-2">
-                                                            <input type="number" name="discount" placeholder="Harga Final" class="form-control mt-2">
-                                                            <button class="btn btn-sm btn-success mt-2">Kirim</button>
-                                                        </form>
+                                                        @if ($spphExist And !strlen($quotation->name))                                                        
+                                                            {{-- Form - Upload Quotation --}}
+                                                            <form action="{{ Route('upload', ['name' => 'quotation']) }}" method="post" enctype="multipart/form-data" class="quotation-form mt-2" style="display: none">
+                                                                @csrf
+                                                                <input type="hidden" name="procurement" value="{{ $procurement->id }}">
+                                                                <input type="hidden" name="vendor" value="{{ $quotation->vendor }}">
+                                                                <input type="text" id="ref" name="ref" class="form-control mb-2" placeholder="Nomor Surat" required>
+                                                                <input type="file" name="quotation" id="quotation" class="form-control-file mb-2" accept="application/pdf" required>
+                                                                <button class="btn btn-sm btn-primary">Upload</button>
+                                                            </form>
+                                                        @endif
                                                     @endif
                                                 </div>
                                             </td>

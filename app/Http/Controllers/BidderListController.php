@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Auth;
 
 class BidderListController extends Controller
 {
@@ -142,12 +143,92 @@ class BidderListController extends Controller
         //
     }
 
-    public function destroyVendorCategory($vendor, $category, $sub_category){
+    public function destroyVendorCategory($vendor, $category, $sub_category)
+    {
         \App\Models\VendorCategory::where('vendor', '=', $vendor)
             ->where('category', '=', $category)
             ->where('sub_category', '=', $sub_category)
             ->delete();
 
+        return redirect()->back();
+    }
+
+    public function setTenderWinner($procurement, $vendor)
+    {
+        $items          = \App\Models\Item::join('quotations', 'quotations.item_sub_category', 'items.sub_category')
+                            ->select('items.*')
+                            ->where('items.procurement', '=', $procurement)
+                            ->where('quotations.vendor', '=', $vendor)
+                            ->get();
+        $quotation      = \App\Models\Quotation::join('vendors', 'vendors.id', '=', 'quotations.vendor')
+                            ->select('quotations.*', 'vendors.name AS vendor_name')
+                            ->where('quotations.procurement', '=', $procurement)
+                            ->where('quotations.vendor', '=', $vendor)
+                            ->first();
+
+        return view('procurement.documents.bapp.set-winner', [
+            'items' => $items,
+            'quotation' => $quotation,
+        ]);
+    }
+
+    public function setItemFinalPrice(Request $request)
+    {
+        $quotation = \App\Models\Quotation::where('procurement', '=', $request->procurement)
+                        ->where('vendor', '=', $request->vendor)
+                        ->update(['winner' => true]);
+
+        $item = \App\Models\Item::find($request->items);
+
+        $item->quotation_price  = $request->bidder_price;
+        $item->nego_price       = $request->nego_price;
+        $item->vendor_specs     = $request->vendor_specs;
+
+        $item->save();            
+
+        $vendor = \App\Models\Vendor::find($request->vendor);
+
+        $log = new \App\Models\ProcLog;
+
+        $log->procurement   = $request->procurement;
+        $log->message       = "Pemenang Tender: $vendor->name";
+        $log->sender        = Auth::user()->id;
+
+        $log->save();
+
+        $procurement = \App\Models\Procurement::find($request->procurement);
+
+        $procurement->updated_at = date('Y-m-d H:i:s');
+
+        $procurement->save();
+
+        return Redirect(Route('show-procurement', ['id' => $request->procurement]));
+    }
+
+    public function setNotSuitable($procurement, $vendor)
+    {
+        $quotation = \App\Models\Quotation::where('procurement', '=', $procurement)
+                        ->where('vendor', '=', $vendor)
+                        ->update(['isSuitable' => false]);
+
+        $vendor = \App\Models\Vendor::find($vendor);
+
+        $log = new \App\Models\ProcLog;
+
+        $log->procurement   = $procurement;
+        $log->message       = "Penawaran tidak sesuai: $vendor->name";
+        $log->sender        = Auth::user()->id;
+
+        $log->save();
+
+        $proc_id = $procurement;
+
+        $procurement = \App\Models\Procurement::find($proc_id);
+
+        $procurement->updated_at = date('Y-m-d H:i:s');
+
+        $procurement->save();
+        
         return redirect()->back();
     }
 }

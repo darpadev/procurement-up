@@ -23,36 +23,52 @@ class DocumentController extends Controller
         }
 
         if($name == 'quotation'){
-            $id = $request->id;
+            $vendor = $request->vendor;
 
             $stmt = $pdo->prepare("UPDATE quotations 
                                     SET name=?, doc_type=?, doc=?, updated_at=? 
-                                    WHERE id=?");
+                                    WHERE vendor=?");
             $stmt->bindParam(1, $ref);
             $stmt->bindParam(2, $doc_type);
             $stmt->bindParam(3, $doc);
             $stmt->bindParam(4, $date);
-            $stmt->bindParam(5, $id);
+            $stmt->bindParam(5, $vendor);
 
             $stmt->execute();
+
+            $vendor = \App\Models\Vendor::select('name')->where('id', '=', $request->vendor)->first();
+
+            $log = new \App\Models\ProcLog;
+
+            $log->procurement   = $request->procurement;
+            $log->message       = "Penawaran dari $vendor->name berhasil diunggah";
+            $log->sender        = Auth::user()->id;
+
+            $log->save();
         }elseif ($name == 'spph'){
-            $procurement = $request->procurement;
-            $vendor = $request->vendor;
-            $item = $request->sub_category;
-            $type = $name;
+            $sub_categories = \App\Models\Quotation::select('item_sub_category AS name')
+                                ->where('vendor', '=', $request->vendor)
+                                ->get();
 
-            $stmt = $pdo->prepare("INSERT INTO vendor_docs VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bindParam(1, $procurement);
-            $stmt->bindParam(2, $vendor);
-            $stmt->bindParam(3, $item);
-            $stmt->bindParam(4, $ref);
-            $stmt->bindParam(5, $type);
-            $stmt->bindParam(6, $doc_type);
-            $stmt->bindParam(7, $doc);
-            $stmt->bindParam(8, $date);
-            $stmt->bindParam(9, $date);
+            foreach($sub_categories AS $sub){
+                $procurement = $request->procurement;
+                $vendor = $request->vendor;
+                $item = $sub->name;
+                $type = $name;
 
-            $stmt->execute();
+                $stmt = $pdo->prepare("INSERT INTO vendor_docs VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bindParam(1, $procurement);
+                $stmt->bindParam(2, $vendor);
+                $stmt->bindParam(3, $item);
+                $stmt->bindParam(4, $ref);
+                $stmt->bindParam(5, $type);
+                $stmt->bindParam(6, $doc_type);
+                $stmt->bindParam(7, $doc);
+                $stmt->bindParam(8, $date);
+                $stmt->bindParam(9, $date);
+
+                $stmt->execute();
+            }
 
             $vendor = \App\Models\Vendor::select('name')->where('id', '=', $request->vendor)->first();
 
@@ -65,16 +81,67 @@ class DocumentController extends Controller
             $log->save();
 
             $proc = \App\Models\Procurement::find($procurement);
-            $new_status     = \App\Models\Status::select('id')->where('name', '=', 'SPPH')->get()[0];
+            $new_status     = \App\Models\Status::select('id')->where('name', '=', 'SPPH')->first();
             $proc->status   = $new_status->id;
 
             $proc->save();
+        }elseif ($name == 'bapp'){
+            $procurement = $request->procurement;
+            $type = $name;
+
+            $stmt = $pdo->prepare("INSERT INTO documents VALUES(NULL, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bindParam(1, $procurement);
+            $stmt->bindParam(2, $ref);
+            $stmt->bindParam(3, $doc_type);
+            $stmt->bindParam(4, $type);
+            $stmt->bindParam(5, $date);
+            $stmt->bindParam(6, $date);
+            $stmt->bindParam(7, $doc);
+
+            $stmt->execute();
+
+            $log = new \App\Models\ProcLog;
+
+            $log->procurement   = $procurement;
+            $log->message       = "BAPP berhasil diunggah";
+            $log->sender        = Auth::user()->id;
+
+            $log->save();
+
+            $proc_id = $procurement;
+            $status = \App\Models\Status::select('id')->where('name', '=', 'BAPP')->first();
+
+            $procurement = \App\Models\Procurement::find($proc_id);
+
+            $procurement->status = $status->id;
+
+            $procurement->save();
         }
 
         return (redirect(url()->previous()));
     }
 
-    public function view($id, $table){
+    public function view($id, $table, $proc_id = NULL){
+        if($proc_id){
+            $procurement = \App\Models\Procurement::find($proc_id);
+            $status = \App\Models\Status::select('id', 'name')->where('name', '=', 'Tender Evaluation')->first();
+
+            if(Auth::user()->id == $procurement->applicant And $procurement->status != $status->id){
+                
+                $procurement->status = $status->id;
+
+                $procurement->save();
+
+                $log = new \App\Models\ProcLog;
+
+                $log->procurement   = $proc_id;
+                $log->message       = "Status pengadaan sudah diperbaharui: $status->name";
+                $log->sender        = Auth::user()->id;
+
+                $log->save();
+            }
+        }
+
         $pdo = DB::getPdo();
 
         $row = $pdo->prepare("SELECT * FROM $table WHERE id = ?");
@@ -194,8 +261,6 @@ class DocumentController extends Controller
                 Berikut adalah penjelasan singkat dalam pengajuan permohonan penawaran ini:
             </p>"
         );
-
-        $day_deadline = date_create('NOW')->modify('+14 day')->format('d F Y');
 
         $mpdf->WriteHTML(
             "<ol style='$text_justify $font_size_body'>
@@ -353,51 +418,30 @@ class DocumentController extends Controller
     }
 
     public function generateBapp(Request $request){
-        for ($i=0; $i < count($request->quotation_price); $i++) { 
-            \App\Models\Item::where('id', '=', $request->item[$i])
-                ->update([
-                    'quotation_price' => $request->quotation_price[$i],
-                    'nego_price' => $request->nego_price[$i],
-                    'updated_at' => date('Y-m-d H:i:s')
-                ]);
-        }
+        // dd($request->all());
+        // $pdo = DB::getPdo();
 
-        $procurement = \App\Models\Procurement::join('proc_mechanisms', 'proc_mechanisms.id', '=', 'procurements.mechanism')
-            ->select('procurements.*', 'proc_mechanisms.name AS mech')
-            ->where('procurements.id', '=', $request->proc_id)->get()[0];
+        // $row = $pdo->prepare("SELECT items.name, items.specs, items.qty, items.quotation_price, items.nego_price, vendors.name AS vendor, vendors.address, vendors.phone, vendors.tin
+        //                         FROM items INNER JOIN quotations ON items.id = quotations.item INNER JOIN vendors ON vendors.id = quotations.vendor
+        //                         WHERE $vendors_id");
+
+        // $row->execute();
+
+        // $items = $row->fetch(PDO::FETCH_ASSOC);
         
-        $vendors_id = '';
+        $direktur_pfu = \App\Models\User::join('origins', 'origins.id', '=', 'users.origin')
+                            ->join('roles', 'roles.id', '=', 'users.role')
+                            ->select('users.name', 'roles.name AS role', 'origins.name AS origin')
+                            ->where('roles.name', '=', 'Direktur')
+                            ->where('origins.name', '=', 'Fungsi Pengelola Fasilitas Universitas')
+                            ->first();
 
-        for ($i=0; $i < count($request->vendor); $i++) { 
-            $vendors_id .= "vendors.id = " . $request->vendor[$i];
-            if(++$i != count($request->vendor)){
-                $vendors_id .= " OR ";
-            }
-        }
-
-        $pdo = DB::getPdo();
-
-        $row = $pdo->prepare("SELECT items.name, items.specs, items.qty, items.quotation_price, items.nego_price, vendors.name AS vendor, vendors.address, vendors.phone, vendors.tin
-                                FROM items INNER JOIN quotations ON items.id = quotations.item INNER JOIN vendors ON vendors.id = quotations.vendor
-                                WHERE $vendors_id");
-
-        $row->execute();
-
-        $items = $row->fetch(PDO::FETCH_ASSOC);
-
-        
-        $receiver = \App\Models\User::join('roles', 'roles.id', '=', 'users.role')
-            ->join('units', 'units.id', '=', 'users.unit')
-            ->select('users.name', 'roles.name AS role', 'units.name AS unit')
-            ->where('roles.name', '=', 'Wakil Rektor')
-            ->where('units.name', '=', 'Bidang Keuangan dan Sumber Daya Organisasi')
-            ->get()[0];
-        $sender = \App\Models\User::join('roles', 'roles.id', '=', 'users.role')
-            ->join('origins', 'origins.id', '=', 'users.origin')
-            ->select('users.name', 'roles.name AS role', 'origins.name AS origin')
-            ->where('roles.name', '=', 'Direktur')
-            ->where('origins.name', '=', 'Fungsi Pengelola Fasilitas Universitas')
-            ->get()[0];
+        $manajer_procurement = \App\Models\User::join('units', 'units.id', '=', 'users.unit')
+                                ->join('roles', 'roles.id', '=', 'users.role')
+                                ->select('users.name', 'roles.name AS role', 'units.name AS unit')
+                                ->where('roles.name', '=', 'Manajer')
+                                ->where('units.name', '=', 'Fungsi Pengadaan Barang dan Jasa')
+                                ->first();
 
         // CSS
         $font_bold = "font-weight: bold;";
@@ -411,7 +455,9 @@ class DocumentController extends Controller
             'setAutoBottomMargin' => 'stretch'
         ]);
 
-        $doc_name = "BAPP_" . $items['vendor'] . "_" . $procurement->name . "_" . date('Ymd-His');
+        $procurement = \App\Models\Procurement::where('id', '=', $request->procurement)->first();
+
+        $doc_name = "BAPP_" . $procurement->name . "_" . date('Ymd-His') . ".pdf";
 
 
         $mpdf->SetTitle($doc_name);
@@ -443,61 +489,137 @@ class DocumentController extends Controller
             "
         );
         
-
+        $table_style = $font_size_body . "border-collapse: collapse; border: 1px solid black; width: 100%;";
+        $table_border = "border: 1px solid black;";
 
         $mpdf->WriteHTML(
             "<p style='$font_size_body text-align: center;'>
-            <u style='$font_bold font-size: 12pt;'>BERITA ACARA PENUNJUKKAN PEMENANG</u>
-            <br>
-            $request->ref
+                <u style='$font_bold font-size: 12pt;'>BERITA ACARA PENETAPAN PEMENANG</u>
+                <br>
+                No. $request->ref
             </p>"
         );
+
+        $mpdf->WriteHTML("<p style='$font_size_body'>Jakarta, " . dateIDN(date('Ymd')) .  '</p>');
         
-        setlocale(LC_TIME, 'id_ID');
-        $mpdf->WriteHTML("<p style='$font_size_body'>Jakarta, " . strftime('%d %B %Y') .  '</p>');
-
-        $mpdf->WriteHTML(
-            "<table style='$font_size_body'>
+        $mpdf->WriteHTML("
+            <table style='$font_size_body'>
                 <tr>
-                    <td>Kepada</td>
+                    <td style='padding-right: 16px;'>Kepada</td>
                     <td>:</td>
-                    <td>$receiver->role $receiver->unit</td>
+                    <td style='padding-left: 4px;'>Direktur Fungsi Pengelola Fasilitas Universitas</td>
                 </tr>
                 <tr>
-                    <td>Dari</td>
+                    <td style='padding-right: 16px;'>Dari</td>
                     <td>:</td>
-                    <td>$sender->role $sender->origin</td>
+                    <td style='padding-left: 4px;'>Manajer Fungsi Pengadaan Barang dan Jasa</td>
                 </tr>
                 <tr>
-                    <td>Lampiran</td>
+                    <td style='padding-right: 16px;'>Lampiran</td>
                     <td>:</td>
-                    <td>1 Bundel</td>
+                    <td style='padding-left: 4px;'>1 Bundel</td>
                 </tr>
                 <tr>
-                    <td>Sifat</td>
+                    <td style='padding-right: 16px;'>Sifat</td>
                     <td>:</td>
-                    <td>Rahasia/Terbatas</td>
+                    <td style='padding-left: 4px;'>Rahasia/Terbatas</td>
                 </tr>
                 <tr>
-                    <td style='vertical-align: top;'>Perihal</td>
+                    <td style='padding-right: 16px; vertical-align: top;'>Perihal</td>
                     <td style='vertical-align: top;'>:</td>
-                    <td style='$font_bold'>Permohonan Persetujuan Penetapan Pemenang $procurement->name</td>
+                    <td style='$font_bold $text_justify padding-left: 4px;'>Permohonan Persetujuan Penetapan Pemenang $procurement->name</td>
                 </tr>
-            </table>"
-        );
+            </table>
+        ");
 
-        $itemVendor = $items['vendor'];
+        $quotations = \App\Models\Quotation::join('vendors', 'vendors.id', '=', 'quotations.vendor')
+                        ->leftJoin('vendor_docs', 'vendor_docs.vendor', '=', 'quotations.vendor')
+                        ->select('quotations.name', 'vendors.name AS vendor_name', 'vendor_docs.name AS spph_ref')
+                        ->where('quotations.procurement', '=', $procurement->id)
+                        ->orderBy('vendors.name')
+                        ->distinct('quotations.vendor')
+                        ->get();
+        $earliest_quotation = \App\Models\Quotation::where('procurement', '=', $procurement->id)->min('created_at');
+
+        $spph_data = '';
+
+        $counter = 1;
+        foreach($quotations as $index => $quotation){
+            if($index < 1){
+                $spph_data .= "
+                    <tr>
+                        <td style='$table_border text-align: center'>$counter</td>
+                        <td rowspan=" . 10 . " style='$table_border padding: 8px; text-align: center;'>
+                            Rp" . number_format($procurement->value * 1.1, 0, '', '.') . "
+                        </td>
+                        <td style='$table_border padding: 8px; vertical-align: top;'>$quotation->vendor_name</td>
+                        <td style='$table_border padding: 8px; vertical-align: top;'>" . str_replace('.pdf', '', $quotation->spph_ref) . "</td>
+                        <td style='$table_border padding: 8px; vertical-align: top;'>" . str_replace('.pdf', '', $quotation->name) . "</td>
+                    </tr>
+                ";
+            }else{
+                $spph_data .= "
+                    <tr>
+                        <td style='$table_border text-align: center'>$counter</td>
+                        <td style='$table_border padding: 8px; vertical-align: top;'>$quotation->vendor_name</td>
+                        <td style='$table_border padding: 8px; vertical-align: top;'>" . str_replace('.pdf', '', $quotation->spph_ref) . "</td>
+                        <td style='$table_border padding: 8px; vertical-align: top;'>" . str_replace('.pdf', '', $quotation->name) . "</td>
+                    </tr>
+                    <tr>
+                        <td style='$table_border text-align: center'>$counter</td>
+                        <td style='$table_border padding: 8px; vertical-align: top;'>$quotation->vendor_name</td>
+                        <td style='$table_border padding: 8px; vertical-align: top;'>" . str_replace('.pdf', '', $quotation->spph_ref) . "</td>
+                        <td style='$table_border padding: 8px; vertical-align: top;'>" . str_replace('.pdf', '', $quotation->name) . "</td>
+                    </tr>
+                ";
+            }
+            $counter += 1;
+        }
+
+        $available_quotation = 0;
+
+        foreach($quotations as $quotation){
+            if($quotation->name != NULL) $available_quotation += 1;
+        }
+
+        $vendor_invited = \App\Models\Quotation::where('procurement', '=', $procurement->id)
+                            ->distinct('vendor')
+                            ->count('vendor');
 
         $mpdf->WriteHTML(
             "<p style='$font_size_body $text_justify'>
                 Berkaitan dengan:
                 <ol style='$font_size_body $text_justify'>
-                    <li> Memorandum <span style='$font_bold'>$procurement->ref</span> tentang <span style='$font_bold'>$procurement->name</span> pada tanggal " . date('d F Y', strtotime($procurement->created_at)) . ".</li>
+                    <li style='margin-bottom: 16px'> 
+                        Memorandum no. <span style='$font_bold'>$procurement->ref</span> 
+                        tentang <span style='$font_bold'>$procurement->name</span> pada tanggal " . dateIDN($procurement->created_at) . 
+                    ".</li>
+                    <li style='margin-bottom: 16px'>
+                        Surat Permintaan Penawaran Harga yang dikirimkan kepada " . $vendor_invited . " 
+                        vendor pada tanggal " . dateIDN($earliest_quotation) . "
+                        sebagai berikut:
+                        <table style='$table_border $table_style'>
+                            <thead>
+                                <tr>
+                                    <th style='$table_border width: 5%'>No.</th>
+                                    <th style='$table_border width: 20%'>Owner Estimate<br>(+PPN)</th>
+                                    <th style='$table_border width: 15%'>Nama<br>Vendor</th>
+                                    <th style='$table_border width: 30%'>No. SPPH</th>
+                                    <th style='$table_border width: 30%'>Surat Penawaran</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                $spph_data
+                            </tbody>
+                        </table>
+                    </li>
+                    <li style='margin-bottom: 16px'>
+                        Berdasarkan Surat Permintaan Penawaran Harga yang dikirimkan ke vendor, terdapat $available_quotation
+                        vendor yang mengirimkan penawaran harga, sebagai berikut:
+                    </li>
                 </ol>
             </p>"
         );
-
-        $doc_name = $doc_name . ".pdf";
 
         return $mpdf->Output($doc_name, "I");
     }
@@ -778,19 +900,35 @@ class DocumentController extends Controller
         ]);
     }
 
-    public function generateBappForm($proc_id, $vendor_id){
-        $procurement = \App\Models\Procurement::select('ref', 'name')->where('id', '=', $proc_id)->first();
-        $items = \App\Models\Quotation::join('items', 'items.id', '=', 'quotations.item')
-            ->select('items.id', 'items.name', 'items.specs', 'quotations.vendor')
-            ->where('quotations.vendor', '=', $vendor_id)
-            ->get();
-        
+    public function generateBappForm($proc_id){
+        $procurement    = \App\Models\Procurement::select('id', 'ref', 'name')->where('id', '=', $proc_id)->first();
+        $quotations     = \App\Models\Quotation::join('vendors', 'vendors.id', '=', 'quotations.vendor')
+                            ->join('item_sub_categories', 'item_sub_categories.id', '=', 'quotations.item_sub_category')
+                            ->join('item_categories', 'item_categories.id', '=', 'item_sub_categories.category')
+                            ->select(
+                                'quotations.*', 
+                                'vendors.id AS vendor_id',
+                                'vendors.name AS vendor_name', 
+                                'item_categories.name AS cat_name', 
+                                'item_sub_categories.name AS sub_name'
+                                )
+                            ->orderBy('vendors.name', 'ASC')
+                            ->where('procurement', '=', $proc_id)
+                            ->get();
+        $vendors        = \App\Models\Vendor::join('quotations', 'quotations.vendor', '=', 'vendors.id')
+                            ->select('vendors.id', 'vendors.name')
+                            ->distinct()
+                            ->where('quotations.procurement', '=', $proc_id)
+                            ->orderBy('name')
+                            ->get();
+        $items          = \App\Models\Item::where('procurement', '=', $proc_id)->get();
         
         return view('procurement.documents.bapp.form', [
             'proc_id' => $proc_id,
-            'vendor_id' => $vendor_id,
-            'items' => $items,
             'procurement' => $procurement,
+            'items' => $items,
+            'quotations' => $quotations,
+            'vendors' => $vendors,
         ]);
     } 
 
@@ -807,28 +945,5 @@ class DocumentController extends Controller
             'procurement' => $procurement,
             'items' => $items
         ]);
-    }
-
-    public function setWinner(Request $request){
-        $quotation = \App\Models\Quotation::find($request->id);
-
-        $quotation->winner = true;
-
-        $quotation->save();
-
-        $item = \App\Models\Item::find($request->item_id);
-
-        $item->quotation_price  = $request->offering_price;
-        $item->discount       = $request->discount;
-
-        $item->save();
-
-        $procurement = \App\Models\Procurement::find($request->procurement_id);
-
-        $procurement->updated_at = date('Y-m-d H:i:s');
-
-        $procurement->save();
-
-        return Redirect()->Back();
     }
 }

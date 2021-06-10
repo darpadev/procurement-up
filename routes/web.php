@@ -28,7 +28,7 @@ Route::middleware(['auth'])->group(function () {
     // ProcurementController
     Route::get('/new-procurement', [ProcurementController::class, 'create'])->name('new-procurement');
     Route::get('/my-procurement', [ProcurementController::class, 'index'])->name('my-procurement');
-    Route::get('/my-procurement/show/{id}', [ProcurementController::class, 'show'])->name('show-procurement');
+    Route::match(['get', 'post'], '/my-procurement/show/{id}', [ProcurementController::class, 'show'])->name('show-procurement');
     Route::get('/my-procurement/edit/{id}', [ProcurementController::class, 'edit'])->name('edit-procurement');
     Route::get('/view-document/{id}', [ProcurementController::class, 'viewDoc'])->name('view-document');
     Route::get('/download-template', [ProcurementController::class, 'downloadTemplate'])->name('download-template');
@@ -47,9 +47,12 @@ Route::middleware(['auth'])->group(function () {
     // BidderListController
     Route::get('/bidder-list', [BidderListController::class, 'index'])->name('bidder-list');
     Route::get('/bidder-list/new', [BidderListController::class, 'create'])->name('new-vendor');
+    Route::get('/bidder-list/{procurement}/not-suitable/{vendor}', [BidderListController::class, 'setNotSuitable'])->name('set-not-suitable');
+    Route::get('/bidder-list/{procurement}/set-winner/{vendor}', [BidderListController::class, 'setTenderWinner'])->name('set-winner-form');
         // Form
         Route::post('/store-vendor', [BidderListController::class, 'store'])->name('store-vendor');
         Route::post('/update-vendor/{id}', [BidderListController::class, 'update'])->name('update-vendor');
+        Route::post('/set-winner', [BidderListController::class, 'setItemFinalPrice'])->name('set-winner');
         Route::get('/destroy/{vendor}/{category}/{sub_category}', [BidderListController::class, 'destroyVendorCategory'])->name('destroy-vendor-category');
         // AJAX
         Route::post('/get-sub-category', [BidderListController::class, 'getSubCategory']);
@@ -57,7 +60,7 @@ Route::middleware(['auth'])->group(function () {
     // DocumentController
         // Request Form
         Route::get('/generate-spph/form/{proc_id}/{vendor_id}', [DocumentController::class, 'generateSpphForm'])->name('generate-spph-form');
-        Route::get('/generate-bapp/form/{proc_id}/{vendor_id}', [DocumentController::class, 'generateBappForm'])->name('generate-bapp-form');
+        Route::get('/generate-bapp/form/{proc_id}', [DocumentController::class, 'generateBappForm'])->name('generate-bapp-form');
         Route::get('/generate-po/form/{proc_id}/{vendor_id}', [DocumentController::class, 'generatePoForm'])->name('generate-po-form');
     
         // Upload Document
@@ -67,10 +70,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/generate-spph', [DocumentController::class, 'generateSpph'])->name('generate-spph');
         Route::post('/generate-bapp', [DocumentController::class, 'generateBapp'])->name('generate-bapp');
         Route::post('/generate-po', [DocumentController::class, 'generatePo'])->name('generate-po');
-        Route::get('/view/{id}/{table}', [DocumentController::class, 'view'])->name('view-document-vendor');
-    
-        // Declare Winning Quotation
-        Route::post('/set/winner', [DocumentController::class, 'setWinner'])->name('set-winner');
+        Route::get('/view/{id}/{table}/{proc_id?}', [DocumentController::class, 'view'])->name('view-document-vendor');
 });
 
 
